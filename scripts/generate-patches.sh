@@ -37,96 +37,47 @@ echo "Creating working branch..."
 git checkout -b aec3-800ms-modifications 2>/dev/null || git checkout aec3-800ms-modifications
 
 # Function to find and modify files
-modify_aec3_config_h() {
-    echo "Modifying aec3_config.h..."
+modify_echo_canceller3_config_h() {
+    echo "Modifying echo_canceller3_config.h..."
 
-    local FILE="modules/audio_processing/aec3/aec3_config.h"
+    local FILE="api/audio/echo_canceller3_config.h"
     if [ ! -f "$FILE" ]; then
-        echo "Warning: $FILE not found, skipping..."
-        return
+        echo "Warning: $FILE not found, trying alternate location..."
+        FILE="api/echo_canceller3_config.h"
     fi
 
-    # Increase num_partitions (look for various possible patterns)
-    sed -i.bak 's/size_t num_partitions = [0-9]\+/size_t num_partitions = 40/' "$FILE" || true
-    sed -i.bak 's/constexpr size_t kNumPartitions = [0-9]\+/constexpr size_t kNumPartitions = 40/' "$FILE" || true
-    sed -i.bak 's/kAdaptiveFilterLength = [0-9]\+/kAdaptiveFilterLength = 40/' "$FILE" || true
+    if [ ! -f "$FILE" ]; then
+        echo "Error: echo_canceller3_config.h not found in expected locations"
+        return 1
+    fi
 
-    # Increase render buffer size
-    sed -i.bak 's/max_render_buffer_size_ms = [0-9]\+/max_render_buffer_size_ms = 1200/' "$FILE" || true
-    sed -i.bak 's/kMaxRenderBufferSizeMs = [0-9]\+/kMaxRenderBufferSizeMs = 1200/' "$FILE" || true
+    # Increase filter length_blocks from 13 to 40 (main configuration)
+    sed -i.bak 's/MainConfiguration main = {13,/MainConfiguration main = {40,/' "$FILE" || true
+
+    # Increase filter length_blocks from 12 to 40 (main_initial configuration)
+    sed -i.bak 's/MainConfiguration main_initial = {12,/MainConfiguration main_initial = {40,/' "$FILE" || true
 
     rm -f "${FILE}.bak"
+
+    echo "✓ Modified filter length from 13/12 blocks to 40 blocks"
 }
 
-modify_aec3_config_cc() {
-    echo "Modifying aec3_config.cc..."
-
-    local FILE="modules/audio_processing/aec3/aec3_config.cc"
-    if [ ! -f "$FILE" ]; then
-        echo "Warning: $FILE not found, skipping..."
-        return
-    fi
-
-    # Adjust convergence parameters
-    sed -i.bak 's/leakage_converged = 0\.00[0-9]\+f/leakage_converged = 0.0005f/' "$FILE" || true
-    sed -i.bak 's/error_floor = [0-9]\+\.[0-9]\+f/error_floor = 2.0f/' "$FILE" || true
-
-    rm -f "${FILE}.bak"
-}
-
-modify_block_delay_buffer() {
-    echo "Modifying block_delay_buffer.h..."
-
-    local FILE="modules/audio_processing/aec3/block_delay_buffer.h"
-    if [ ! -f "$FILE" ]; then
-        echo "Warning: $FILE not found, skipping..."
-        return
-    fi
-
-    # Increase buffer size
-    sed -i.bak 's/kMaxBufferSize = [0-9]\+/kMaxBufferSize = 250/' "$FILE" || true
-    sed -i.bak 's/constexpr size_t kMaxBufferSize = [0-9]\+/constexpr size_t kMaxBufferSize = 250/' "$FILE" || true
-
-    rm -f "${FILE}.bak"
-}
-
-modify_render_delay_buffer() {
-    echo "Modifying render_delay_buffer.h..."
-
-    local FILE="modules/audio_processing/aec3/render_delay_buffer.h"
-    if [ ! -f "$FILE" ]; then
-        # Try alternate location
-        FILE="modules/audio_processing/aec3/render_delay_buffer_impl.h"
-    fi
-
-    if [ ! -f "$FILE" ]; then
-        echo "Warning: render_delay_buffer.h not found, skipping..."
-        return
-    fi
-
-    # Increase max delay
-    sed -i.bak 's/kMaxDelay = [0-9]\+/kMaxDelay = 1000/' "$FILE" || true
-    sed -i.bak 's/constexpr size_t kMaxDelay = [0-9]\+/constexpr size_t kMaxDelay = 1000/' "$FILE" || true
-
-    rm -f "${FILE}.bak"
-}
+# Note: Most other parameters don't need modification as they're inside the config struct
+# The filter length change is the primary modification needed for 800ms support
 
 # Apply all modifications
 echo "Applying modifications..."
-modify_aec3_config_h
-modify_aec3_config_cc
-modify_block_delay_buffer
-modify_render_delay_buffer
+modify_echo_canceller3_config_h
 
 # Show what changed
 echo ""
 echo "Changes made:"
-git diff --stat modules/audio_processing/aec3/
+git diff --stat api/audio/echo_canceller3_config.h api/echo_canceller3_config.h 2>/dev/null || true
 
 # Create patch file
 echo ""
 echo "Generating patch file..."
-git diff modules/audio_processing/aec3/ > "$PATCHES_DIR/0001-increase-aec3-filter-length-800ms.patch"
+git diff api/ > "$PATCHES_DIR/0001-increase-aec3-filter-length-800ms.patch"
 
 if [ -s "$PATCHES_DIR/0001-increase-aec3-filter-length-800ms.patch" ]; then
     echo "✓ Patch file created: $PATCHES_DIR/0001-increase-aec3-filter-length-800ms.patch"
