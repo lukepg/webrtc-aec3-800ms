@@ -1,6 +1,6 @@
 # WebRTC AEC3 with 800ms Delay Support
 
-[![Build WebRTC AEC3](https://github.com/YOUR_USERNAME/webrtc-aec3-800ms-build/actions/workflows/build-webrtc.yml/badge.svg)](https://github.com/YOUR_USERNAME/webrtc-aec3-800ms-build/actions/workflows/build-webrtc.yml)
+[![Build WebRTC AEC3](https://github.com/lukepg/webrtc-aec3-800ms/actions/workflows/build-webrtc.yml/badge.svg)](https://github.com/lukepg/webrtc-aec3-800ms/actions/workflows/build-webrtc.yml)
 
 Custom-built WebRTC Audio Processing Module (APM) with extended AEC3 (Acoustic Echo Cancellation 3) filter support for handling **up to 800ms echo delays** — specifically optimized for Bluetooth speakers.
 
@@ -28,11 +28,11 @@ Standard WebRTC AEC3 implementations support echo delays of ~200-400ms. However,
 
 ## 📦 Pre-built Releases
 
-Download pre-compiled libraries from [Releases](https://github.com/YOUR_USERNAME/webrtc-aec3-800ms-build/releases):
+Download pre-compiled libraries from [Releases](https://github.com/lukepg/webrtc-aec3-800ms/releases):
 
 ```bash
 # Download latest release
-curl -L https://github.com/YOUR_USERNAME/webrtc-aec3-800ms-build/releases/latest/download/libwebrtc_apms-800ms.tar.gz | tar xz
+curl -L https://github.com/lukepg/webrtc-aec3-800ms/releases/latest/download/libwebrtc_apms-800ms.tar.gz | tar xz
 
 # Files will be extracted to:
 # jniLibs/arm64-v8a/libwebrtc_apms.so
