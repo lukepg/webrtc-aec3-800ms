@@ -1,0 +1,253 @@
+name: Build WebRTC AEC3 with 800ms Support
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      webrtc_branch:
+        description: 'WebRTC branch to build (e.g., branch-heads/6099 for M120)'
+        required: false
+        default: 'branch-heads/6099'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [arm64, arm]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up environment variables
+      run: |
+        echo "ARCH=${{ matrix.arch }}" >> $GITHUB_ENV
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          echo "ANDROID_ARCH=arm64-v8a" >> $GITHUB_ENV
+        else
+          echo "ANDROID_ARCH=armeabi-v7a" >> $GITHUB_ENV
+        fi
+        echo "WEBRTC_BRANCH=${{ github.event.inputs.webrtc_branch || 'branch-heads/6099' }}" >> $GITHUB_ENV
+
+    - name: Cache depot_tools
+      uses: actions/cache@v3
+      with:
+        path: ~/depot_tools
+        key: depot-tools-${{ runner.os }}
+
+    - name: Cache WebRTC source
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/webrtc
+          ~/.cipd
+        key: webrtc-src-${{ env.WEBRTC_BRANCH }}-v1
+        restore-keys: |
+          webrtc-src-
+
+    - name: Cache build output
+      uses: actions/cache@v3
+      with:
+        path: ~/webrtc/src/out/${{ matrix.arch }}
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v1
+        restore-keys: |
+          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          git curl python3 python3-pip \
+          build-essential pkg-config \
+          ninja-build openjdk-11-jdk
+
+    - name: Install depot_tools
+      run: |
+        if [ ! -d "$HOME/depot_tools" ]; then
+          cd ~
+          git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+        fi
+        echo "$HOME/depot_tools" >> $GITHUB_PATH
+
+    - name: Fetch WebRTC source
+      run: |
+        export PATH="$HOME/depot_tools:$PATH"
+
+        if [ ! -d "$HOME/webrtc/src" ]; then
+          mkdir -p ~/webrtc
+          cd ~/webrtc
+          fetch --nohooks webrtc_android
+          cd src
+          git checkout ${{ env.WEBRTC_BRANCH }}
+          gclient sync
+        else
+          cd ~/webrtc/src
+          git fetch
+          git checkout ${{ env.WEBRTC_BRANCH }}
+          gclient sync
+        fi
+
+    - name: Apply AEC3 800ms patches
+      run: |
+        cd ~/webrtc/src
+
+        # Apply patches from repository
+        for patch in $GITHUB_WORKSPACE/patches/*.patch; do
+          if [ -f "$patch" ]; then
+            echo "Applying patch: $(basename $patch)"
+            git apply --verbose "$patch" || {
+              echo "Failed to apply patch: $patch"
+              exit 1
+            }
+          fi
+        done
+
+    - name: Generate build configuration
+      run: |
+        export PATH="$HOME/depot_tools:$PATH"
+        cd ~/webrtc/src
+
+        # Generate GN build files
+        gn gen out/${{ matrix.arch }} --args='
+          target_os="android"
+          target_cpu="${{ matrix.arch }}"
+          is_debug=false
+          is_component_build=false
+          rtc_include_tests=false
+          rtc_enable_protobuf=false
+          rtc_build_examples=false
+          rtc_build_tools=false
+          use_rtti=true
+          use_custom_libcxx=false
+          treat_warnings_as_errors=false
+        '
+
+    - name: Build WebRTC Audio Processing Module
+      run: |
+        export PATH="$HOME/depot_tools:$PATH"
+        cd ~/webrtc/src
+
+        # Build the audio processing module
+        ninja -C out/${{ matrix.arch }} \
+          modules/audio_processing:audio_processing \
+          common_audio \
+          api:audio_api \
+          rtc_base
+
+    - name: Build JNI wrapper
+      run: |
+        cd ~/webrtc/src
+
+        # Copy JNI wrapper source
+        cp $GITHUB_WORKSPACE/jni/android_apm_wrapper.cpp modules/audio_processing/
+        cp $GITHUB_WORKSPACE/jni/BUILD.gn.append modules/audio_processing/BUILD.gn.webrtc_apms
+
+        # Append JNI target to BUILD.gn
+        cat modules/audio_processing/BUILD.gn.webrtc_apms >> modules/audio_processing/BUILD.gn
+
+        # Build JNI wrapper
+        export PATH="$HOME/depot_tools:$PATH"
+        ninja -C out/${{ matrix.arch }} modules/audio_processing:webrtc_apms
+
+    - name: Extract and prepare library
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}
+
+        # Copy the built library
+        cp ~/webrtc/src/out/${{ matrix.arch }}/libwebrtc_apms.so \
+           $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/
+
+        # Strip debug symbols to reduce size
+        $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip \
+          $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so || true
+
+        # Get file size
+        ls -lh $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libwebrtc_apms-${{ env.ANDROID_ARCH }}
+        path: output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so
+        retention-days: 30
+
+    - name: Create build info
+      if: matrix.arch == 'arm64'
+      run: |
+        cat > $GITHUB_WORKSPACE/output/build-info.txt << EOF
+        WebRTC AEC3 800ms Support Build
+        ================================
+
+        Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        WebRTC Branch: ${{ env.WEBRTC_BRANCH }}
+        Commit: $(cd ~/webrtc/src && git rev-parse HEAD)
+
+        Modifications:
+        - AEC3 filter partitions increased to 40 (from 12)
+        - Maximum delay support: 800ms
+        - Render buffer extended to 1200ms
+        - Optimized for Bluetooth speaker scenarios
+
+        Architectures:
+        - arm64-v8a
+        - armeabi-v7a
+
+        Library Sizes:
+        $(ls -lh $GITHUB_WORKSPACE/output/*/libwebrtc_apms.so 2>/dev/null || echo "Pending other architecture builds")
+
+        Integration:
+        Copy the .so files to your Android project:
+          app/src/main/jniLibs/arm64-v8a/libwebrtc_apms.so
+          app/src/main/jniLibs/armeabi-v7a/libwebrtc_apms.so
+        EOF
+
+        cat $GITHUB_WORKSPACE/output/build-info.txt
+
+    - name: Upload build info
+      if: matrix.arch == 'arm64'
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-info
+        path: output/build-info.txt
+        retention-days: 90
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Create release package
+      run: |
+        mkdir -p release/jniLibs/arm64-v8a
+        mkdir -p release/jniLibs/armeabi-v7a
+
+        cp libwebrtc_apms-arm64-v8a/libwebrtc_apms.so release/jniLibs/arm64-v8a/
+        cp libwebrtc_apms-armeabi-v7a/libwebrtc_apms.so release/jniLibs/armeabi-v7a/
+        cp build-info/build-info.txt release/
+
+        cd release
+        tar -czf ../libwebrtc_apms-800ms.tar.gz .
+        cd ..
+
+        ls -lh libwebrtc_apms-800ms.tar.gz
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: build-${{ github.run_number }}
+        name: WebRTC AEC3 800ms - Build ${{ github.run_number }}
+        body_path: release/build-info.txt
+        files: libwebrtc_apms-800ms.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

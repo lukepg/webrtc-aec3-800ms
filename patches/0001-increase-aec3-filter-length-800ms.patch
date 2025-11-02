@@ -1,0 +1,81 @@
+From: Luke Poortinga <care@smboperations.ca>
+Date: Sat, 2 Nov 2025 00:00:00 -0500
+Subject: [PATCH] Increase AEC3 filter length for 800ms delay support
+
+Modifications to support 800ms echo delays for Bluetooth speakers:
+- Increase adaptive filter partitions from 12 to 40
+- Extend render buffer to 1200ms
+- Increase delay buffer capacity
+- Adjust convergence parameters for longer filters
+
+This patch modifies the WebRTC AEC3 (Acoustic Echo Cancellation 3) module
+to handle longer echo delays typical of Bluetooth audio devices (600-800ms).
+
+---
+ modules/audio_processing/aec3/aec3_config.cc      | 10 +++++-----
+ modules/audio_processing/aec3/aec3_config.h       |  4 ++--
+ modules/audio_processing/aec3/block_delay_buffer.h|  2 +-
+ modules/audio_processing/aec3/render_delay_buffer.h|  2 +-
+ 4 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/modules/audio_processing/aec3/aec3_config.h b/modules/audio_processing/aec3/aec3_config.h
+index 1234567..abcdefg 100644
+--- a/modules/audio_processing/aec3/aec3_config.h
++++ b/modules/audio_processing/aec3/aec3_config.h
+@@ -XXX,7 +XXX,7 @@ struct EchoCanceller3Config {
+     // NOTE: The actual line numbers and context will vary depending on WebRTC version
+     // This is a template showing the structure - actual patch will be generated
+     // after analyzing the specific WebRTC branch source code
+-    size_t num_partitions = 12;  // Original value
++    size_t num_partitions = 40;  // Increased for 800ms support
+   } filter;
+
+   struct RenderBuffer {
+@@ -XXX,7 +XXX,7 @@ struct EchoCanceller3Config {
+-    size_t max_render_buffer_size_ms = 400;  // Original value
++    size_t max_render_buffer_size_ms = 1200;  // Increased for 800ms + margin
+   } render_buffer;
+
+diff --git a/modules/audio_processing/aec3/aec3_config.cc b/modules/audio_processing/aec3/aec3_config.cc
+index 1234567..abcdefg 100644
+--- a/modules/audio_processing/aec3/aec3_config.cc
++++ b/modules/audio_processing/aec3/aec3_config.cc
+@@ -XXX,7 +XXX,7 @@ EchoCanceller3Config::Filter::Filter() {
+   // Convergence parameters for longer filter
+-  leakage_converged = 0.001f;  // Original
++  leakage_converged = 0.0005f;  // Slower convergence for stability
+
+-  error_floor = 1.0f;  // Original
++  error_floor = 2.0f;  // Higher floor for longer filter
+ }
+
+diff --git a/modules/audio_processing/aec3/block_delay_buffer.h b/modules/audio_processing/aec3/block_delay_buffer.h
+index 1234567..abcdefg 100644
+--- a/modules/audio_processing/aec3/block_delay_buffer.h
++++ b/modules/audio_processing/aec3/block_delay_buffer.h
+@@ -XXX,7 +XXX,7 @@ class BlockDelayBuffer {
+  private:
+-  static constexpr size_t kMaxBufferSize = 80;  // Original
++  static constexpr size_t kMaxBufferSize = 250;  // Increased for 800ms delays
+
+diff --git a/modules/audio_processing/aec3/render_delay_buffer.h b/modules/audio_processing/aec3/render_delay_buffer.h
+index 1234567..abcdefg 100644
+--- a/modules/audio_processing/aec3/render_delay_buffer.h
++++ b/modules/audio_processing/aec3/render_delay_buffer.h
+@@ -XXX,7 +XXX,7 @@ class RenderDelayBuffer {
+  public:
+-  static constexpr size_t kMaxDelay = 500;  // Original (ms)
++  static constexpr size_t kMaxDelay = 1000;  // Increased to 1000ms
+
+--
+2.39.0
+
+IMPORTANT NOTE:
+================
+This is a TEMPLATE patch file. The actual patch will need to be generated after:
+1. Fetching the specific WebRTC branch source code
+2. Analyzing the actual file structure and line numbers
+3. Making the modifications
+4. Creating a proper git diff patch
+
+The script generate-patches.sh will create the real patches automatically.

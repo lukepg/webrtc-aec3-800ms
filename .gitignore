@@ -1,0 +1,48 @@
+# WebRTC build output
+output/
+*.so
+*.a
+
+# Build artifacts
+build/
+out/
+.ninja_deps
+.ninja_log
+
+# depot_tools
+depot_tools/
+
+# WebRTC source (too large for git)
+webrtc/
+src/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+env/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.orig

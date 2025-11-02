@@ -1,0 +1,25 @@
+# This file should be appended to modules/audio_processing/BUILD.gn
+# It adds the JNI wrapper target for building libwebrtc_apms.so
+
+rtc_shared_library("webrtc_apms") {
+  sources = [
+    "android_apm_wrapper.cpp",
+  ]
+
+  deps = [
+    ":audio_processing",
+    "../api:audio_api",
+    "../common_audio",
+    "../rtc_base",
+    "../rtc_base:rtc_base_approved",
+  ]
+
+  configs += [ "../..:common_config" ]
+  public_configs = [ "../..:common_inherited_config" ]
+
+  if (is_android) {
+    libs = [ "log" ]
+  }
+
+  output_name = "webrtc_apms"
+}
