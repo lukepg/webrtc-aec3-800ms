@@ -147,15 +147,44 @@ jobs:
         grep "RefinedConfiguration refined = {40," api/audio/echo_canceller3_config.h && \
         echo "✓ Patch applied successfully - filter length increased to 40 blocks (800ms support)"
 
-    - name: Test build configuration
+    - name: Build WebRTC audio processing library
       run: |
         export PATH="$HOME/depot_tools:$PATH"
         cd ~/webrtc/src
 
-        # Just verify the build configuration works (don't actually build to save time)
-        echo "Build configuration generated successfully"
-        echo "To actually build the library, you would run:"
-        echo "  ninja -C out/${{ matrix.arch }} modules/audio_processing:audio_processing"
+        echo "Building WebRTC audio processing modules for Android..."
+
+        # Build all required modules
+        ninja -C out/${{ matrix.arch }} modules/audio_processing
+
+        echo ""
+        echo "Build complete! Checking outputs..."
+
+        # List what was built
+        find out/${{ matrix.arch }}/obj/modules/audio_processing -name "*.a" | head -10
+
+        # Verify main library exists
+        if [ -f "out/${{ matrix.arch }}/obj/modules/audio_processing/libaudio_processing.a" ]; then
+          echo "✓ Audio processing library built successfully"
+          ls -lh out/${{ matrix.arch }}/obj/modules/audio_processing/libaudio_processing.a
+        else
+          echo "Searching for audio processing artifacts..."
+          find out/${{ matrix.arch }} -name "*audio_processing*" -type f | head -20
+        fi
+
+    - name: Package build artifacts
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}
+        cd ~/webrtc/src
+
+        # Copy built static libraries
+        cp -r out/${{ matrix.arch }}/obj/modules/audio_processing $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/
+
+        # Create archive of all libraries
+        tar -czf $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/webrtc-libs.tar.gz \
+          -C out/${{ matrix.arch }}/obj \
+          modules/audio_processing \
+          || echo "Note: Could not create full archive"
 
     - name: Create verification report
       run: |
@@ -207,11 +236,14 @@ jobs:
 
         cat $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/VERIFICATION_REPORT.md
 
-    - name: Upload artifact
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: libwebrtc_apms-${{ env.ANDROID_ARCH }}
-        path: output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so
+        name: webrtc-build-${{ env.ANDROID_ARCH }}
+        path: |
+          output/${{ env.ANDROID_ARCH }}/webrtc-libs.tar.gz
+          output/${{ env.ANDROID_ARCH }}/audio_processing/
+          output/${{ env.ANDROID_ARCH }}/VERIFICATION_REPORT.md
         retention-days: 30
 
     - name: Create build info
