@@ -197,22 +197,18 @@ jobs:
 
         echo "✓ Headers packaged"
 
+    - name: Setup Android NDK
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r26d
+        add-to-path: true
+
     - name: Compile JNI wrapper
       run: |
         cd ~/webrtc/src
 
-        # Get Android NDK from SDK
-        export ANDROID_HOME=$ANDROID_SDK_ROOT
-        export NDK_VERSION="27.2.12479018"
-        export NDK_ROOT="$ANDROID_HOME/ndk/$NDK_VERSION"
-
-        # Install NDK if not present
-        if [ ! -d "$NDK_ROOT" ]; then
-          echo "Installing Android NDK $NDK_VERSION..."
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;$NDK_VERSION"
-        fi
-
-        # Set up toolchain
+        # Use NDK from setup-ndk action
+        NDK_ROOT=$ANDROID_NDK_HOME
         TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64"
 
         if [ "${{ matrix.arch }}" == "arm64" ]; then
@@ -223,6 +219,9 @@ jobs:
 
         # Compile JNI wrapper
         echo "Compiling JNI wrapper..."
+        echo "Using NDK: $NDK_ROOT"
+        echo "Using compiler: $CXX"
+
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
 
         $CXX -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
@@ -242,10 +241,8 @@ jobs:
       run: |
         cd ~/webrtc/src
 
-        # Get NDK toolchain
-        export ANDROID_HOME=$ANDROID_SDK_ROOT
-        export NDK_VERSION="27.2.12479018"
-        export NDK_ROOT="$ANDROID_HOME/ndk/$NDK_VERSION"
+        # Use NDK from setup-ndk action
+        NDK_ROOT=$ANDROID_NDK_HOME
         TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64"
 
         if [ "${{ matrix.arch }}" == "arm64" ]; then
