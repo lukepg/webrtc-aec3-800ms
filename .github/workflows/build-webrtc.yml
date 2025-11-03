@@ -197,25 +197,34 @@ jobs:
 
         echo "✓ Headers packaged"
 
+    - name: Install Android NDK
+      run: |
+        echo "Installing Android NDK..."
+
+        # Use Android SDK that's pre-installed
+        export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+        export ANDROID_HOME=$ANDROID_SDK_ROOT
+
+        # Accept licenses
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+        # Install NDK (LTS version)
+        echo "Installing NDK 26.1.10909125..."
+        $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;26.1.10909125"
+
+        # Verify installation
+        ls -la $ANDROID_SDK_ROOT/ndk/
+        echo "NDK installed successfully"
+
     - name: Compile JNI wrapper
       run: |
         cd ~/webrtc/src
 
-        # Use pre-installed NDK on GitHub Actions runners
-        # GitHub Actions comes with NDK pre-installed
-        echo "Searching for pre-installed NDK..."
-        ls -la /usr/local/lib/android/sdk/ndk/ 2>/dev/null || echo "No NDK in standard location"
-
-        # Find any installed NDK
-        if [ -d "/usr/local/lib/android/sdk/ndk-bundle" ]; then
-          NDK_ROOT="/usr/local/lib/android/sdk/ndk-bundle"
-        else
-          # Find the latest NDK version
-          NDK_ROOT=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | sort -V | tail -1)
-        fi
+        # Use the NDK we just installed
+        export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+        NDK_ROOT="$ANDROID_SDK_ROOT/ndk/26.1.10909125"
 
         echo "Using NDK: $NDK_ROOT"
-        ls -la "$NDK_ROOT/" || echo "NDK not found"
 
         # Find the actual clang++ binary
         if [ "${{ matrix.arch }}" == "arm64" ]; then
@@ -226,16 +235,15 @@ jobs:
           API_LEVEL=21
         fi
 
-        # Find clang++ in the NDK
-        CXX=$(find "$NDK_ROOT" -name "clang++" -type f 2>/dev/null | head -1)
+        # NDK 26 uses generic clang with --target
+        CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+        CFLAGS="--target=$TARGET$API_LEVEL"
 
-        if [ -z "$CXX" ] || [ ! -f "$CXX" ]; then
-          echo "ERROR: Could not find clang++ in NDK"
-          echo "Searched in: $NDK_ROOT"
+        if [ ! -f "$CXX" ]; then
+          echo "ERROR: Compiler not found at $CXX"
+          ls -la "$NDK_ROOT/toolchains/llvm/prebuilt/"
           exit 1
         fi
-
-        CFLAGS="--target=$TARGET$API_LEVEL"
 
         # Compile JNI wrapper
         echo "Compiling JNI wrapper..."
@@ -260,12 +268,9 @@ jobs:
       run: |
         cd ~/webrtc/src
 
-        # Use same NDK as compilation step
-        if [ -d "/usr/local/lib/android/sdk/ndk-bundle" ]; then
-          NDK_ROOT="/usr/local/lib/android/sdk/ndk-bundle"
-        else
-          NDK_ROOT=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | sort -V | tail -1)
-        fi
+        # Use the same NDK we installed
+        export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+        NDK_ROOT="$ANDROID_SDK_ROOT/ndk/26.1.10909125"
 
         # Find the actual clang++ binary
         if [ "${{ matrix.arch }}" == "arm64" ]; then
@@ -276,9 +281,8 @@ jobs:
           API_LEVEL=21
         fi
 
-        # Find clang++ in the NDK
-        CXX=$(find "$NDK_ROOT" -name "clang++" -type f 2>/dev/null | head -1)
-
+        # NDK 26 uses generic clang with --target
+        CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
         CFLAGS="--target=$TARGET$API_LEVEL"
 
         # Find all WebRTC static libraries
