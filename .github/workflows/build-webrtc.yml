@@ -192,7 +192,7 @@ jobs:
         echo "Building JNI shared library..."
 
         # Build the JNI wrapper using WebRTC's build system
-        ninja -C out/${{ matrix.arch }} webrtc_apms:webrtc_apms
+        ninja -C out/${{ matrix.arch }} //webrtc_apms:webrtc_apms
 
         echo "✓ JNI shared library built"
 
