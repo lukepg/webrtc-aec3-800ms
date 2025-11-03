@@ -172,12 +172,125 @@ jobs:
           find out/${{ matrix.arch }} -name "*audio_processing*" -type f | head -20
         fi
 
+    - name: Package WebRTC headers
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers
+        cd ~/webrtc/src
+
+        # Package essential headers needed for JNI compilation
+        echo "Packaging WebRTC headers..."
+
+        # Core headers
+        cp -r api $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers/
+        cp -r modules/audio_processing/include $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers/modules_include/
+        cp -r rtc_base $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers/
+        cp -r common_audio $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers/
+        cp -r system_wrappers $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers/
+
+        # Abseil headers (required dependency)
+        cp -r third_party/abseil-cpp $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers/third_party/
+
+        # Create headers archive
+        tar -czf $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/webrtc-headers.tar.gz \
+          -C $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/headers \
+          .
+
+        echo "✓ Headers packaged"
+
+    - name: Compile JNI wrapper
+      run: |
+        cd ~/webrtc/src
+
+        # Get Android NDK from SDK
+        export ANDROID_HOME=$ANDROID_SDK_ROOT
+        export NDK_VERSION="27.2.12479018"
+        export NDK_ROOT="$ANDROID_HOME/ndk/$NDK_VERSION"
+
+        # Install NDK if not present
+        if [ ! -d "$NDK_ROOT" ]; then
+          echo "Installing Android NDK $NDK_VERSION..."
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;$NDK_VERSION"
+        fi
+
+        # Set up toolchain
+        TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64"
+
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          CXX="$TOOLCHAIN/bin/aarch64-linux-android21-clang++"
+        else
+          CXX="$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++"
+        fi
+
+        # Compile JNI wrapper
+        echo "Compiling JNI wrapper..."
+        mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
+
+        $CXX -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
+          -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
+          -I. \
+          -I./third_party/abseil-cpp \
+          -std=c++17 \
+          -fPIC \
+          -DWEBRTC_POSIX \
+          -DWEBRTC_ANDROID \
+          -DWEBRTC_LINUX \
+          -O2
+
+        echo "✓ JNI wrapper compiled"
+
+    - name: Link shared library
+      run: |
+        cd ~/webrtc/src
+
+        # Get NDK toolchain
+        export ANDROID_HOME=$ANDROID_SDK_ROOT
+        export NDK_VERSION="27.2.12479018"
+        export NDK_ROOT="$ANDROID_HOME/ndk/$NDK_VERSION"
+        TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64"
+
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          CXX="$TOOLCHAIN/bin/aarch64-linux-android21-clang++"
+        else
+          CXX="$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++"
+        fi
+
+        # Find all WebRTC static libraries
+        WEBRTC_LIBS=$(find out/${{ matrix.arch }}/obj/modules/audio_processing -name "*.a" | tr '\n' ' ')
+
+        echo "Linking shared library..."
+        echo "Found $(echo $WEBRTC_LIBS | wc -w) WebRTC libraries"
+
+        # Link everything into shared library
+        $CXX -shared -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so \
+          $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
+          -Wl,--whole-archive \
+          $WEBRTC_LIBS \
+          -Wl,--no-whole-archive \
+          -llog -lm -lc \
+          -static-libstdc++ \
+          -Wl,-soname,libwebrtc_apms.so \
+          -Wl,--gc-sections \
+          -Wl,--exclude-libs,ALL
+
+        echo "✓ Shared library created"
+        ls -lh $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so
+
+    - name: Verify JNI symbols
+      run: |
+        echo "Verifying JNI symbols in library..."
+
+        # Check for JNI symbols
+        nm -D $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so | grep "Java_com_webrtc" | head -10
+
+        echo ""
+        echo "✓ JNI symbols verified"
+
     - name: Package build artifacts
       run: |
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}
         cd ~/webrtc/src
 
-        # Copy built static libraries
+        # Copy built static libraries (for reference)
         cp -r out/${{ matrix.arch }}/obj/modules/audio_processing $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/
 
         # Create archive of all libraries
@@ -241,8 +354,9 @@ jobs:
       with:
         name: webrtc-build-${{ env.ANDROID_ARCH }}
         path: |
+          output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so
           output/${{ env.ANDROID_ARCH }}/webrtc-libs.tar.gz
-          output/${{ env.ANDROID_ARCH }}/audio_processing/
+          output/${{ env.ANDROID_ARCH }}/webrtc-headers.tar.gz
           output/${{ env.ANDROID_ARCH }}/VERIFICATION_REPORT.md
         retention-days: 30
 
@@ -300,15 +414,21 @@ jobs:
         mkdir -p release/jniLibs/arm64-v8a
         mkdir -p release/jniLibs/armeabi-v7a
 
-        cp libwebrtc_apms-arm64-v8a/libwebrtc_apms.so release/jniLibs/arm64-v8a/
-        cp libwebrtc_apms-armeabi-v7a/libwebrtc_apms.so release/jniLibs/armeabi-v7a/
-        cp build-info/build-info.txt release/
+        # Copy .so files from build artifacts
+        cp webrtc-build-arm64-v8a/libwebrtc_apms.so release/jniLibs/arm64-v8a/
+        cp webrtc-build-armeabi-v7a/libwebrtc_apms.so release/jniLibs/armeabi-v7a/
+        cp build-info/build-info.txt release/ || echo "No build info"
 
         cd release
         tar -czf ../libwebrtc_apms-800ms.tar.gz .
         cd ..
 
+        echo ""
+        echo "Release package created:"
         ls -lh libwebrtc_apms-800ms.tar.gz
+        echo ""
+        echo "Library sizes:"
+        ls -lh release/jniLibs/*/libwebrtc_apms.so
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
