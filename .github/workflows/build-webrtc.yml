@@ -210,6 +210,13 @@ jobs:
         # Use NDK from setup-ndk action
         NDK_ROOT=$ANDROID_NDK_HOME
 
+        # Debug: Show NDK structure
+        echo "NDK_ROOT=$NDK_ROOT"
+        echo "NDK directory contents:"
+        ls -la "$NDK_ROOT/" || echo "NDK_ROOT not found"
+        echo "Looking for toolchains:"
+        find "$NDK_ROOT" -name "clang++" -type f 2>/dev/null | head -5 || echo "No clang++ found"
+
         # Find the actual clang++ binary
         if [ "${{ matrix.arch }}" == "arm64" ]; then
           TARGET="aarch64-linux-android"
@@ -219,14 +226,27 @@ jobs:
           API_LEVEL=21
         fi
 
-        # NDK r26+ uses generic clang with --target flag
-        CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+        # Try to find clang++ in various locations
+        if [ -f "$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" ]; then
+          CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+        elif [ -f "$NDK_ROOT/bin/clang++" ]; then
+          CXX="$NDK_ROOT/bin/clang++"
+        else
+          # Search for it
+          CXX=$(find "$NDK_ROOT" -name "clang++" -type f | head -1)
+        fi
+
         CFLAGS="--target=$TARGET$API_LEVEL"
 
         # Compile JNI wrapper
         echo "Compiling JNI wrapper..."
         echo "Using NDK: $NDK_ROOT"
         echo "Using compiler: $CXX $CFLAGS"
+
+        if [ ! -f "$CXX" ]; then
+          echo "ERROR: Compiler not found at $CXX"
+          exit 1
+        fi
 
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
 
@@ -259,8 +279,16 @@ jobs:
           API_LEVEL=21
         fi
 
-        # NDK r26+ uses generic clang with --target flag
-        CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+        # Try to find clang++ in various locations
+        if [ -f "$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" ]; then
+          CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+        elif [ -f "$NDK_ROOT/bin/clang++" ]; then
+          CXX="$NDK_ROOT/bin/clang++"
+        else
+          # Search for it
+          CXX=$(find "$NDK_ROOT" -name "clang++" -type f | head -1)
+        fi
+
         CFLAGS="--target=$TARGET$API_LEVEL"
 
         # Find all WebRTC static libraries
