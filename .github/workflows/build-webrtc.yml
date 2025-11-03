@@ -209,22 +209,28 @@ jobs:
 
         # Use NDK from setup-ndk action
         NDK_ROOT=$ANDROID_NDK_HOME
-        TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64"
 
+        # Find the actual clang++ binary
         if [ "${{ matrix.arch }}" == "arm64" ]; then
-          CXX="$TOOLCHAIN/bin/aarch64-linux-android21-clang++"
+          TARGET="aarch64-linux-android"
+          API_LEVEL=21
         else
-          CXX="$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++"
+          TARGET="armv7a-linux-androideabi"
+          API_LEVEL=21
         fi
+
+        # NDK r26+ uses generic clang with --target flag
+        CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+        CFLAGS="--target=$TARGET$API_LEVEL"
 
         # Compile JNI wrapper
         echo "Compiling JNI wrapper..."
         echo "Using NDK: $NDK_ROOT"
-        echo "Using compiler: $CXX"
+        echo "Using compiler: $CXX $CFLAGS"
 
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
 
-        $CXX -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
+        $CXX $CFLAGS -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
           -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
           -I. \
           -I./third_party/abseil-cpp \
@@ -243,13 +249,19 @@ jobs:
 
         # Use NDK from setup-ndk action
         NDK_ROOT=$ANDROID_NDK_HOME
-        TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64"
 
+        # Find the actual clang++ binary
         if [ "${{ matrix.arch }}" == "arm64" ]; then
-          CXX="$TOOLCHAIN/bin/aarch64-linux-android21-clang++"
+          TARGET="aarch64-linux-android"
+          API_LEVEL=21
         else
-          CXX="$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang++"
+          TARGET="armv7a-linux-androideabi"
+          API_LEVEL=21
         fi
+
+        # NDK r26+ uses generic clang with --target flag
+        CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
+        CFLAGS="--target=$TARGET$API_LEVEL"
 
         # Find all WebRTC static libraries
         WEBRTC_LIBS=$(find out/${{ matrix.arch }}/obj/modules/audio_processing -name "*.a" | tr '\n' ' ')
@@ -258,7 +270,7 @@ jobs:
         echo "Found $(echo $WEBRTC_LIBS | wc -w) WebRTC libraries"
 
         # Link everything into shared library
-        $CXX -shared -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so \
+        $CXX $CFLAGS -shared -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so \
           $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
           -Wl,--whole-archive \
           $WEBRTC_LIBS \
