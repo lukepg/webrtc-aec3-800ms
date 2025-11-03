@@ -1,0 +1,36 @@
+# Build file for WebRTC APM JNI wrapper
+#
+# This integrates the JNI wrapper into the WebRTC build system
+
+import("//build/config/android/rules.gni")
+
+rtc_shared_library("webrtc_apms") {
+  sources = [
+    "webrtc_apm_jni.cpp",
+  ]
+
+  deps = [
+    "//modules/audio_processing",
+    "//modules/audio_processing:api",
+    "//modules/audio_processing:audio_processing_c",
+    "//rtc_base:rtc_base",
+    "//common_audio",
+    "//api:scoped_refptr",
+    "//api/audio:audio_processing",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+
+  ldflags = [
+    "-Wl,-soname,libwebrtc_apms.so",
+    "-Wl,--gc-sections",
+    "-Wl,--exclude-libs,ALL",
+  ]
+
+  libs = [
+    "log",
+  ]
+
+  configs += [
+    "//build/config/android:hide_all_but_jni",
+  ]
+}
