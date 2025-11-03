@@ -197,25 +197,25 @@ jobs:
 
         echo "✓ Headers packaged"
 
-    - name: Setup Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r26d
-        add-to-path: true
-
     - name: Compile JNI wrapper
       run: |
         cd ~/webrtc/src
 
-        # Use NDK from setup-ndk action
-        NDK_ROOT=$ANDROID_NDK_HOME
+        # Use pre-installed NDK on GitHub Actions runners
+        # GitHub Actions comes with NDK pre-installed
+        echo "Searching for pre-installed NDK..."
+        ls -la /usr/local/lib/android/sdk/ndk/ 2>/dev/null || echo "No NDK in standard location"
 
-        # Debug: Show NDK structure
-        echo "NDK_ROOT=$NDK_ROOT"
-        echo "NDK directory contents:"
-        ls -la "$NDK_ROOT/" || echo "NDK_ROOT not found"
-        echo "Looking for toolchains:"
-        find "$NDK_ROOT" -name "clang++" -type f 2>/dev/null | head -5 || echo "No clang++ found"
+        # Find any installed NDK
+        if [ -d "/usr/local/lib/android/sdk/ndk-bundle" ]; then
+          NDK_ROOT="/usr/local/lib/android/sdk/ndk-bundle"
+        else
+          # Find the latest NDK version
+          NDK_ROOT=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | sort -V | tail -1)
+        fi
+
+        echo "Using NDK: $NDK_ROOT"
+        ls -la "$NDK_ROOT/" || echo "NDK not found"
 
         # Find the actual clang++ binary
         if [ "${{ matrix.arch }}" == "arm64" ]; then
@@ -226,27 +226,20 @@ jobs:
           API_LEVEL=21
         fi
 
-        # Try to find clang++ in various locations
-        if [ -f "$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" ]; then
-          CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
-        elif [ -f "$NDK_ROOT/bin/clang++" ]; then
-          CXX="$NDK_ROOT/bin/clang++"
-        else
-          # Search for it
-          CXX=$(find "$NDK_ROOT" -name "clang++" -type f | head -1)
+        # Find clang++ in the NDK
+        CXX=$(find "$NDK_ROOT" -name "clang++" -type f 2>/dev/null | head -1)
+
+        if [ -z "$CXX" ] || [ ! -f "$CXX" ]; then
+          echo "ERROR: Could not find clang++ in NDK"
+          echo "Searched in: $NDK_ROOT"
+          exit 1
         fi
 
         CFLAGS="--target=$TARGET$API_LEVEL"
 
         # Compile JNI wrapper
         echo "Compiling JNI wrapper..."
-        echo "Using NDK: $NDK_ROOT"
         echo "Using compiler: $CXX $CFLAGS"
-
-        if [ ! -f "$CXX" ]; then
-          echo "ERROR: Compiler not found at $CXX"
-          exit 1
-        fi
 
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
 
@@ -267,8 +260,12 @@ jobs:
       run: |
         cd ~/webrtc/src
 
-        # Use NDK from setup-ndk action
-        NDK_ROOT=$ANDROID_NDK_HOME
+        # Use same NDK as compilation step
+        if [ -d "/usr/local/lib/android/sdk/ndk-bundle" ]; then
+          NDK_ROOT="/usr/local/lib/android/sdk/ndk-bundle"
+        else
+          NDK_ROOT=$(ls -d /usr/local/lib/android/sdk/ndk/* 2>/dev/null | sort -V | tail -1)
+        fi
 
         # Find the actual clang++ binary
         if [ "${{ matrix.arch }}" == "arm64" ]; then
@@ -279,15 +276,8 @@ jobs:
           API_LEVEL=21
         fi
 
-        # Try to find clang++ in various locations
-        if [ -f "$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" ]; then
-          CXX="$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++"
-        elif [ -f "$NDK_ROOT/bin/clang++" ]; then
-          CXX="$NDK_ROOT/bin/clang++"
-        else
-          # Search for it
-          CXX=$(find "$NDK_ROOT" -name "clang++" -type f | head -1)
-        fi
+        # Find clang++ in the NDK
+        CXX=$(find "$NDK_ROOT" -name "clang++" -type f 2>/dev/null | head -1)
 
         CFLAGS="--target=$TARGET$API_LEVEL"
 
