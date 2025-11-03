@@ -172,36 +172,85 @@ jobs:
           find out/${{ matrix.arch }} -name "*audio_processing*" -type f | head -20
         fi
 
-    - name: Integrate JNI wrapper into WebRTC build
+    - name: Compile JNI wrapper using WebRTC's Clang
       run: |
         cd ~/webrtc/src
 
-        # Copy JNI files into WebRTC source tree
-        echo "Integrating JNI wrapper into WebRTC build..."
-        mkdir -p webrtc_apms
-        cp $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp webrtc_apms/
-        cp $GITHUB_WORKSPACE/jni/BUILD.gn webrtc_apms/
+        echo "Compiling JNI wrapper with WebRTC's Clang toolchain..."
 
-        echo "✓ JNI files integrated"
+        # Use WebRTC's Clang from third_party
+        CLANG_DIR="third_party/llvm-build/Release+Asserts/bin"
+        CXX="$CLANG_DIR/clang++"
 
-    - name: Build JNI shared library with GN
+        if [ ! -f "$CXX" ]; then
+          echo "ERROR: WebRTC Clang not found at $CXX"
+          echo "Looking for Clang..."
+          find . -name "clang++" -type f 2>/dev/null | head -5
+          exit 1
+        fi
+
+        # Set target architecture
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          TARGET="aarch64-linux-android"
+        else
+          TARGET="armv7a-linux-androideabi"
+        fi
+
+        # Compile JNI wrapper
+        mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
+
+        $CXX --target=$TARGET21 \
+          -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
+          -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
+          -I. \
+          -I./third_party/abseil-cpp \
+          -std=c++17 \
+          -fPIC \
+          -DWEBRTC_POSIX \
+          -DWEBRTC_ANDROID \
+          -DWEBRTC_LINUX \
+          -O2
+
+        echo "✓ JNI wrapper compiled"
+
+    - name: Link shared library
       run: |
-        export PATH="$HOME/depot_tools:$PATH"
         cd ~/webrtc/src
 
-        echo "Building JNI shared library..."
+        echo "Linking shared library..."
 
-        # Build the JNI wrapper using WebRTC's build system
-        ninja -C out/${{ matrix.arch }} //webrtc_apms:webrtc_apms
+        # Use WebRTC's Clang
+        CLANG_DIR="third_party/llvm-build/Release+Asserts/bin"
+        CXX="$CLANG_DIR/clang++"
 
-        echo "✓ JNI shared library built"
+        # Set target architecture
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          TARGET="aarch64-linux-android"
+        else
+          TARGET="armv7a-linux-androideabi"
+        fi
 
-        # Copy to output
-        mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}
-        cp out/${{ matrix.arch }}/libwebrtc_apms.so $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/
+        # Find all WebRTC static libraries
+        WEBRTC_LIBS=$(find out/${{ matrix.arch }}/obj/modules/audio_processing -name "*.a" | tr '\n' ' ')
 
-        echo "Library size:"
-        ls -lh $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH}}/libwebrtc_apms.so
+        echo "Found $(echo $WEBRTC_LIBS | wc -w) WebRTC libraries"
+
+        # Link everything
+        $CXX --target=$TARGET21 \
+          -shared \
+          -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so \
+          $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
+          -Wl,--whole-archive \
+          $WEBRTC_LIBS \
+          -Wl,--no-whole-archive \
+          -llog -lm -lc \
+          -static-libstdc++ \
+          -Wl,-soname,libwebrtc_apms.so \
+          -Wl,--gc-sections \
+          -Wl,--exclude-libs,ALL
+
+        echo "✓ Shared library created"
+        ls -lh $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so
 
     - name: Verify JNI symbols
       run: |
