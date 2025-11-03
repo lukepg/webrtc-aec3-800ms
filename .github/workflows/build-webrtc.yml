@@ -46,17 +46,17 @@ jobs:
         path: |
           ~/webrtc
           ~/.cipd
-        key: webrtc-src-${{ env.WEBRTC_BRANCH }}-v1
+        key: webrtc-src-${{ env.WEBRTC_BRANCH }}-v2
         restore-keys: |
-          webrtc-src-
+          webrtc-src-${{ env.WEBRTC_BRANCH }}-v2
 
     - name: Cache build output
       uses: actions/cache@v3
       with:
         path: ~/webrtc/src/out/${{ matrix.arch }}
-        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v1
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v2
         restore-keys: |
-          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-
+          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v2
 
     - name: Free up disk space
       uses: jlumbroso/free-disk-space@main
