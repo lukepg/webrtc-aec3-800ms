@@ -192,8 +192,10 @@ jobs:
         # Set target architecture
         if [ "${{ matrix.arch }}" == "arm64" ]; then
           TARGET="aarch64-linux-android"
+          ARCH_INCLUDE="aarch64-linux-android"
         else
           TARGET="armv7a-linux-androideabi"
+          ARCH_INCLUDE="arm-linux-androideabi"
         fi
 
         # Compile JNI wrapper
@@ -202,19 +204,28 @@ jobs:
         # Find JNI headers (from Java in WebRTC's third_party)
         JNI_INCLUDE="third_party/jdk/current/include"
 
+        # Find Android NDK sysroot (WebRTC downloads this)
+        ANDROID_NDK="third_party/android_ndk"
+        SYSROOT="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+
+        # Use same flags as WebRTC's Android build
         $CXX --target=${TARGET}21 \
+          --sysroot=$SYSROOT \
           -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
           -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
           -I. \
           -I./third_party/abseil-cpp \
           -I$JNI_INCLUDE \
           -I$JNI_INCLUDE/linux \
+          -isystem $SYSROOT/usr/include \
+          -isystem $SYSROOT/usr/include/$ARCH_INCLUDE \
           -std=c++17 \
           -fPIC \
           -DWEBRTC_POSIX \
           -DWEBRTC_ANDROID \
           -DWEBRTC_LINUX \
-          -O2
+          -O2 \
+          -nostdinc++
 
         echo "✓ JNI wrapper compiled"
 
