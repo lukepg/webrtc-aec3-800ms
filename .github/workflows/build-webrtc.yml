@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      max-parallel: 1  # Build one architecture at a time to avoid disk space issues
       matrix:
         arch: [arm64, arm]
 
@@ -225,6 +226,13 @@ jobs:
       run: |
         echo "Build artifacts already in output directory"
         ls -lh $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so
+
+    - name: Clean build artifacts to free disk space
+      run: |
+        echo "Cleaning build directory to free disk space..."
+        rm -rf ~/webrtc/src/out/${{ matrix.arch }}
+        echo "Build artifacts cleaned"
+        df -h
 
     - name: Create verification report
       run: |
