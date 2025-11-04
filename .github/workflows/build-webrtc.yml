@@ -172,31 +172,30 @@ jobs:
           find out/${{ matrix.arch }} -name "*audio_processing*" -type f | head -20
         fi
 
-    - name: Compile JNI wrapper using WebRTC's Clang
+    - name: Compile JNI wrapper using Android NDK Clang
       run: |
         cd ~/webrtc/src
 
-        echo "Compiling JNI wrapper with WebRTC's Clang toolchain..."
+        echo "Compiling JNI wrapper with Android NDK Clang..."
 
-        # Use WebRTC's Clang from third_party
-        CLANG_DIR="third_party/llvm-build/Release+Asserts/bin"
-        CXX="$CLANG_DIR/clang++"
+        # Find Android NDK (WebRTC downloads this)
+        ANDROID_NDK="third_party/android_ndk"
+
+        # Use NDK's prebuilt Clang compiler
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          CXX="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++"
+        else
+          CXX="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++"
+        fi
 
         if [ ! -f "$CXX" ]; then
-          echo "ERROR: WebRTC Clang not found at $CXX"
-          echo "Looking for Clang..."
-          find . -name "clang++" -type f 2>/dev/null | head -5
+          echo "ERROR: NDK Clang not found at $CXX"
+          echo "Looking for NDK..."
+          find third_party/android_ndk -name "*clang++" -type f 2>/dev/null | head -5
           exit 1
         fi
 
-        # Set target architecture
-        if [ "${{ matrix.arch }}" == "arm64" ]; then
-          TARGET="aarch64-linux-android"
-          ARCH_INCLUDE="aarch64-linux-android"
-        else
-          TARGET="armv7a-linux-androideabi"
-          ARCH_INCLUDE="arm-linux-androideabi"
-        fi
+        echo "Using compiler: $CXX"
 
         # Compile JNI wrapper
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
@@ -204,13 +203,8 @@ jobs:
         # Find JNI headers (from Java in WebRTC's third_party)
         JNI_INCLUDE="third_party/jdk/current/include"
 
-        # Find Android NDK sysroot (WebRTC downloads this)
-        ANDROID_NDK="third_party/android_ndk"
-        SYSROOT="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
-
-        # Use same flags as WebRTC's Android build
-        $CXX --target=${TARGET}21 \
-          --sysroot=$SYSROOT \
+        # Compile with NDK's prebuilt compiler (sysroot is built-in)
+        $CXX \
           -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
           -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
           -I. \
@@ -232,16 +226,17 @@ jobs:
 
         echo "Linking shared library..."
 
-        # Use WebRTC's Clang
-        CLANG_DIR="third_party/llvm-build/Release+Asserts/bin"
-        CXX="$CLANG_DIR/clang++"
+        # Find Android NDK
+        ANDROID_NDK="third_party/android_ndk"
 
-        # Set target architecture
+        # Use NDK's prebuilt Clang compiler (same as compilation)
         if [ "${{ matrix.arch }}" == "arm64" ]; then
-          TARGET="aarch64-linux-android"
+          CXX="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++"
         else
-          TARGET="armv7a-linux-androideabi"
+          CXX="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++"
         fi
+
+        echo "Using linker: $CXX"
 
         # Find all WebRTC static libraries
         WEBRTC_LIBS=$(find out/${{ matrix.arch }}/obj/modules/audio_processing -name "*.a" | tr '\n' ' ')
@@ -249,7 +244,7 @@ jobs:
         echo "Found $(echo $WEBRTC_LIBS | wc -w) WebRTC libraries"
 
         # Link everything
-        $CXX --target=${TARGET}21 \
+        $CXX \
           -shared \
           -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so \
           $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
