@@ -136,9 +136,9 @@ jobs:
 
           deps = [
             ":audio_processing",
-            "../../rtc_base",
-            "../../common_audio",
-            "../../api:scoped_refptr",
+            "//rtc_base:rtc_base",
+            "//common_audio",
+            "//api:scoped_refptr",
             "//third_party/abseil-cpp/absl/types:optional",
           ]
 
