@@ -118,20 +118,45 @@ jobs:
           fi
         done
 
-    - name: Copy JNI wrapper into WebRTC source
+    - name: Add JNI wrapper to WebRTC build
       run: |
         cd ~/webrtc/src
 
-        # Create directory for our JNI wrapper
-        mkdir -p webrtc_apms
+        # Copy JNI source into modules/audio_processing
+        cp $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp modules/audio_processing/
 
-        # Copy JNI source
-        cp $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp webrtc_apms/
+        # Append our shared library target to the existing BUILD.gn
+        cat >> modules/audio_processing/BUILD.gn << 'EOF'
 
-        # Copy our BUILD.gn
-        cp $GITHUB_WORKSPACE/jni/BUILD.gn webrtc_apms/
+# Custom JNI wrapper for Android
+shared_library("webrtc_apms") {
+  sources = [
+    "webrtc_apm_jni.cpp",
+  ]
 
-        echo "✓ JNI wrapper copied into WebRTC source tree"
+  deps = [
+    ":audio_processing",
+    "../../rtc_base",
+    "../../common_audio",
+    "../../api:scoped_refptr",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+
+  if (is_android) {
+    ldflags = [
+      "-Wl,-soname,libwebrtc_apms.so",
+      "-Wl,--gc-sections",
+      "-Wl,--exclude-libs,ALL",
+    ]
+
+    libs = [
+      "log",
+    ]
+  }
+}
+EOF
+
+        echo "✓ JNI wrapper added to modules/audio_processing/BUILD.gn"
 
     - name: Generate build configuration
       run: |
@@ -170,7 +195,7 @@ jobs:
         echo "Building WebRTC with JNI wrapper using GN/Ninja..."
 
         # Build our shared library target (GN will handle all dependencies)
-        ninja -C out/${{ matrix.arch }} webrtc_apms:webrtc_apms
+        ninja -C out/${{ matrix.arch }} modules/audio_processing:webrtc_apms
 
         echo ""
         echo "Build complete! Checking outputs..."
