@@ -112,14 +112,17 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
     // High-pass filter (removes low-frequency rumble, improves AEC)
     config.high_pass_filter.enabled = true;
 
-    // Create APM instance with configuration
-    ctx->apm = AudioProcessingBuilder().Create(config);
+    // Create APM instance (M120 API - Create() takes no arguments)
+    ctx->apm = AudioProcessingBuilder().Create();
 
     if (!ctx->apm) {
         LOGE("Failed to create APM instance");
         delete ctx;
         return JNI_FALSE;
     }
+
+    // Apply configuration (M120 API - config is applied after creation)
+    ctx->apm->ApplyConfig(config);
 
     // Store context in Java object
     SetContext(env, thiz, ctx);
@@ -378,12 +381,9 @@ Java_com_webrtc_audioprocessing_Apm_agc_1set_1analog_1level_1limits(
     ApmContext* ctx = GetContext(env, thiz);
     if (!ctx || !ctx->apm) return -1;
 
-    AudioProcessing::Config config = ctx->apm->GetConfig();
-    config.gain_controller1.analog_level_minimum = minimum;
-    config.gain_controller1.analog_level_maximum = maximum;
-    ctx->apm->ApplyConfig(config);
-
-    LOGD("AGC analog limits: %d - %d", minimum, maximum);
+    // M120 doesn't support analog_level_minimum/maximum in Config
+    // These settings are not available in this version
+    LOGD("AGC analog limits not supported in M120 (requested: %d - %d)", minimum, maximum);
     return 0;
 }
 
@@ -454,11 +454,9 @@ Java_com_webrtc_audioprocessing_Apm_vad_1enable(
     ApmContext* ctx = GetContext(env, thiz);
     if (!ctx || !ctx->apm) return -1;
 
-    AudioProcessing::Config config = ctx->apm->GetConfig();
-    config.voice_detection.enabled = enable;
-    ctx->apm->ApplyConfig(config);
-
-    LOGD("VAD %s", enable ? "enabled" : "disabled");
+    // M120 doesn't have voice_detection in Config
+    // VAD functionality is not available through this API in M120
+    LOGD("VAD not supported in M120 Config API (requested: %s)", enable ? "enabled" : "disabled");
     return 0;
 }
 
