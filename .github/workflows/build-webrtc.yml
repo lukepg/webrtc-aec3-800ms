@@ -137,18 +137,16 @@ jobs:
 
           deps = [
             ":audio_processing",
+            "//common_audio",
+            "//rtc_base:rtc_base",
           ]
 
-          configs += [ "//build/config/android:hide_all_but_jni" ]
+          if (is_android) {
+            libs = [ "log" ]
+          }
 
           ldflags = [
             "-Wl,-soname,libwebrtc_apms.so",
-            "-Wl,--gc-sections",
-            "-Wl,--exclude-libs,ALL",
-          ]
-
-          libs = [
-            "log",
           ]
         }
         BUILDGN
