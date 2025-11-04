@@ -129,7 +129,7 @@ jobs:
         cat >> modules/audio_processing/BUILD.gn <<'BUILDGN'
 
         # Custom JNI wrapper for Android
-        shared_library("webrtc_apms") {
+        rtc_shared_library("webrtc_apms") {
           sources = [
             "webrtc_apm_jni.cpp",
           ]
@@ -142,17 +142,17 @@ jobs:
             "//third_party/abseil-cpp/absl/types:optional",
           ]
 
-          if (is_android) {
-            ldflags = [
-              "-Wl,-soname,libwebrtc_apms.so",
-              "-Wl,--gc-sections",
-              "-Wl,--exclude-libs,ALL",
-            ]
+          configs += [ "//build/config/android:hide_all_but_jni" ]
 
-            libs = [
-              "log",
-            ]
-          }
+          ldflags = [
+            "-Wl,-soname,libwebrtc_apms.so",
+            "-Wl,--gc-sections",
+            "-Wl,--exclude-libs,ALL",
+          ]
+
+          libs = [
+            "log",
+          ]
         }
         BUILDGN
 
