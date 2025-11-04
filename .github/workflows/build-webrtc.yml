@@ -126,35 +126,35 @@ jobs:
         cp $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp modules/audio_processing/
 
         # Append our shared library target to the existing BUILD.gn
-        cat >> modules/audio_processing/BUILD.gn << 'EOF'
+        cat >> modules/audio_processing/BUILD.gn <<'BUILDGN'
 
-# Custom JNI wrapper for Android
-shared_library("webrtc_apms") {
-  sources = [
-    "webrtc_apm_jni.cpp",
-  ]
+        # Custom JNI wrapper for Android
+        shared_library("webrtc_apms") {
+          sources = [
+            "webrtc_apm_jni.cpp",
+          ]
 
-  deps = [
-    ":audio_processing",
-    "../../rtc_base",
-    "../../common_audio",
-    "../../api:scoped_refptr",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
+          deps = [
+            ":audio_processing",
+            "../../rtc_base",
+            "../../common_audio",
+            "../../api:scoped_refptr",
+            "//third_party/abseil-cpp/absl/types:optional",
+          ]
 
-  if (is_android) {
-    ldflags = [
-      "-Wl,-soname,libwebrtc_apms.so",
-      "-Wl,--gc-sections",
-      "-Wl,--exclude-libs,ALL",
-    ]
+          if (is_android) {
+            ldflags = [
+              "-Wl,-soname,libwebrtc_apms.so",
+              "-Wl,--gc-sections",
+              "-Wl,--exclude-libs,ALL",
+            ]
 
-    libs = [
-      "log",
-    ]
-  }
-}
-EOF
+            libs = [
+              "log",
+            ]
+          }
+        }
+        BUILDGN
 
         echo "✓ JNI wrapper added to modules/audio_processing/BUILD.gn"
 
