@@ -199,7 +199,7 @@ jobs:
         # Compile JNI wrapper
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
 
-        $CXX --target=$TARGET21 \
+        $CXX --target=${TARGET}21 \
           -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
           -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
           -I. \
@@ -236,7 +236,7 @@ jobs:
         echo "Found $(echo $WEBRTC_LIBS | wc -w) WebRTC libraries"
 
         # Link everything
-        $CXX --target=$TARGET21 \
+        $CXX --target=${TARGET}21 \
           -shared \
           -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/libwebrtc_apms.so \
           $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
