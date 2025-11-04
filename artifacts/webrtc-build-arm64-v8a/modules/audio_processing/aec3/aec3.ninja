@@ -1,0 +1,185 @@
+defines = -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_FORTIFY_SOURCE=2 -D_GNU_SOURCE -DANDROID -DHAVE_SYS_UIO_H -DANDROID_NDK_VERSION_ROLL=r25c_1 -DCR_CLANG_REVISION=\"llvmorg-18-init-9505-g10664813-1\" -DNDEBUG -DNVALGRIND -DDYNAMIC_ANNOTATIONS_ENABLED=0 -DWEBRTC_ENABLE_PROTOBUF=0 -DWEBRTC_STRICT_FIELD_TRIALS=0 -DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE -DRTC_ENABLE_VP9 -DRTC_DAV1D_IN_INTERNAL_DECODER_FACTORY -DWEBRTC_HAVE_SCTP -DWEBRTC_ENABLE_LIBEVENT -DWEBRTC_ARCH_ARM64 -DWEBRTC_HAS_NEON -DWEBRTC_APM_DEBUG_DUMP=0 -DWEBRTC_LIBRARY_IMPL -DWEBRTC_ENABLE_AVX2 -DWEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0 -DWEBRTC_POSIX -DWEBRTC_LINUX -DWEBRTC_ANDROID -DABSL_ALLOCATOR_NOTHROW=1
+include_dirs = -I../.. -Igen -I../../third_party/abseil-cpp
+cflags = -Wall -Wextra -Wimplicit-fallthrough -Wextra-semi -Wunreachable-code-aggressive -Wthread-safety -Wno-missing-field-initializers -Wno-unused-parameter -Wno-psabi -Wloop-analysis -Wno-unneeded-internal-declaration -Wenum-compare-conditional -Wno-ignored-pragma-optimize -Wno-deprecated-builtins -Wno-bitfield-constant-conversion -Wno-deprecated-this-capture -Wno-invalid-offsetof -Wno-vla-extension -Wno-thread-safety-reference-return -Wno-delayed-template-parsing-in-cxx20 -Wshadow -fno-delete-null-pointer-checks -fno-ident -fno-strict-aliasing -fstack-protector -funwind-tables -fPIC -fcolor-diagnostics -fmerge-all-constants -fcrash-diagnostics-dir=../../tools/clang/crashreports -mllvm -instcombine-lower-dbg-declare=0 -mllvm -split-threshold-for-reg-with-hint=0 -ffp-contract=off -ffunction-sections -fno-short-enums -mbranch-protection=standard --target=aarch64-linux-android21 -mno-outline -Wno-builtin-macro-redefined -D__DATE__= -D__TIME__= -D__TIMESTAMP__= -ffile-compilation-dir=. -no-canonical-prefixes -ftrivial-auto-var-init=pattern -Oz -fdata-sections -ffunction-sections -fno-unique-section-names -fno-math-errno -mllvm -enable-ml-inliner=release -fno-omit-frame-pointer -gdwarf-4 -g1 -gdwarf-aranges -fdebug-info-for-profiling -fvisibility=hidden -Wheader-hygiene -Wstring-conversion -Wtautological-overlap-compare -Wexit-time-destructors -Wglobal-constructors -Wno-shadow -Wctad-maybe-unsupported -Wc++11-narrowing -Wundef -Wunused-lambda-capture
+cflags_cc = -std=c++20 -Wno-trigraphs -gsimple-template-names -fno-exceptions --sysroot=../../third_party/android_toolchain/ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot -fvisibility-inlines-hidden -Wnon-virtual-dtor -Woverloaded-virtual
+label_name = aec3
+root_out_dir = .
+target_out_dir = obj/modules/audio_processing/aec3
+target_output_name = libaec3
+
+build obj/modules/audio_processing/aec3/aec3/adaptive_fir_filter.o: cxx ../../modules/audio_processing/aec3/adaptive_fir_filter.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = adaptive_fir_filter.cc
+  source_name_part = adaptive_fir_filter
+build obj/modules/audio_processing/aec3/aec3/adaptive_fir_filter_erl.o: cxx ../../modules/audio_processing/aec3/adaptive_fir_filter_erl.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = adaptive_fir_filter_erl.cc
+  source_name_part = adaptive_fir_filter_erl
+build obj/modules/audio_processing/aec3/aec3/aec3_common.o: cxx ../../modules/audio_processing/aec3/aec3_common.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = aec3_common.cc
+  source_name_part = aec3_common
+build obj/modules/audio_processing/aec3/aec3/aec3_fft.o: cxx ../../modules/audio_processing/aec3/aec3_fft.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = aec3_fft.cc
+  source_name_part = aec3_fft
+build obj/modules/audio_processing/aec3/aec3/aec_state.o: cxx ../../modules/audio_processing/aec3/aec_state.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = aec_state.cc
+  source_name_part = aec_state
+build obj/modules/audio_processing/aec3/aec3/alignment_mixer.o: cxx ../../modules/audio_processing/aec3/alignment_mixer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = alignment_mixer.cc
+  source_name_part = alignment_mixer
+build obj/modules/audio_processing/aec3/aec3/api_call_jitter_metrics.o: cxx ../../modules/audio_processing/aec3/api_call_jitter_metrics.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = api_call_jitter_metrics.cc
+  source_name_part = api_call_jitter_metrics
+build obj/modules/audio_processing/aec3/aec3/block_buffer.o: cxx ../../modules/audio_processing/aec3/block_buffer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = block_buffer.cc
+  source_name_part = block_buffer
+build obj/modules/audio_processing/aec3/aec3/block_delay_buffer.o: cxx ../../modules/audio_processing/aec3/block_delay_buffer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = block_delay_buffer.cc
+  source_name_part = block_delay_buffer
+build obj/modules/audio_processing/aec3/aec3/block_framer.o: cxx ../../modules/audio_processing/aec3/block_framer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = block_framer.cc
+  source_name_part = block_framer
+build obj/modules/audio_processing/aec3/aec3/block_processor.o: cxx ../../modules/audio_processing/aec3/block_processor.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = block_processor.cc
+  source_name_part = block_processor
+build obj/modules/audio_processing/aec3/aec3/block_processor_metrics.o: cxx ../../modules/audio_processing/aec3/block_processor_metrics.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = block_processor_metrics.cc
+  source_name_part = block_processor_metrics
+build obj/modules/audio_processing/aec3/aec3/clockdrift_detector.o: cxx ../../modules/audio_processing/aec3/clockdrift_detector.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = clockdrift_detector.cc
+  source_name_part = clockdrift_detector
+build obj/modules/audio_processing/aec3/aec3/coarse_filter_update_gain.o: cxx ../../modules/audio_processing/aec3/coarse_filter_update_gain.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = coarse_filter_update_gain.cc
+  source_name_part = coarse_filter_update_gain
+build obj/modules/audio_processing/aec3/aec3/comfort_noise_generator.o: cxx ../../modules/audio_processing/aec3/comfort_noise_generator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = comfort_noise_generator.cc
+  source_name_part = comfort_noise_generator
+build obj/modules/audio_processing/aec3/aec3/config_selector.o: cxx ../../modules/audio_processing/aec3/config_selector.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = config_selector.cc
+  source_name_part = config_selector
+build obj/modules/audio_processing/aec3/aec3/decimator.o: cxx ../../modules/audio_processing/aec3/decimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = decimator.cc
+  source_name_part = decimator
+build obj/modules/audio_processing/aec3/aec3/dominant_nearend_detector.o: cxx ../../modules/audio_processing/aec3/dominant_nearend_detector.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = dominant_nearend_detector.cc
+  source_name_part = dominant_nearend_detector
+build obj/modules/audio_processing/aec3/aec3/downsampled_render_buffer.o: cxx ../../modules/audio_processing/aec3/downsampled_render_buffer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = downsampled_render_buffer.cc
+  source_name_part = downsampled_render_buffer
+build obj/modules/audio_processing/aec3/aec3/echo_audibility.o: cxx ../../modules/audio_processing/aec3/echo_audibility.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = echo_audibility.cc
+  source_name_part = echo_audibility
+build obj/modules/audio_processing/aec3/aec3/echo_canceller3.o: cxx ../../modules/audio_processing/aec3/echo_canceller3.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = echo_canceller3.cc
+  source_name_part = echo_canceller3
+build obj/modules/audio_processing/aec3/aec3/echo_path_delay_estimator.o: cxx ../../modules/audio_processing/aec3/echo_path_delay_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = echo_path_delay_estimator.cc
+  source_name_part = echo_path_delay_estimator
+build obj/modules/audio_processing/aec3/aec3/echo_path_variability.o: cxx ../../modules/audio_processing/aec3/echo_path_variability.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = echo_path_variability.cc
+  source_name_part = echo_path_variability
+build obj/modules/audio_processing/aec3/aec3/echo_remover.o: cxx ../../modules/audio_processing/aec3/echo_remover.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = echo_remover.cc
+  source_name_part = echo_remover
+build obj/modules/audio_processing/aec3/aec3/echo_remover_metrics.o: cxx ../../modules/audio_processing/aec3/echo_remover_metrics.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = echo_remover_metrics.cc
+  source_name_part = echo_remover_metrics
+build obj/modules/audio_processing/aec3/aec3/erl_estimator.o: cxx ../../modules/audio_processing/aec3/erl_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = erl_estimator.cc
+  source_name_part = erl_estimator
+build obj/modules/audio_processing/aec3/aec3/erle_estimator.o: cxx ../../modules/audio_processing/aec3/erle_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = erle_estimator.cc
+  source_name_part = erle_estimator
+build obj/modules/audio_processing/aec3/aec3/fft_buffer.o: cxx ../../modules/audio_processing/aec3/fft_buffer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = fft_buffer.cc
+  source_name_part = fft_buffer
+build obj/modules/audio_processing/aec3/aec3/filter_analyzer.o: cxx ../../modules/audio_processing/aec3/filter_analyzer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = filter_analyzer.cc
+  source_name_part = filter_analyzer
+build obj/modules/audio_processing/aec3/aec3/frame_blocker.o: cxx ../../modules/audio_processing/aec3/frame_blocker.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = frame_blocker.cc
+  source_name_part = frame_blocker
+build obj/modules/audio_processing/aec3/aec3/fullband_erle_estimator.o: cxx ../../modules/audio_processing/aec3/fullband_erle_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = fullband_erle_estimator.cc
+  source_name_part = fullband_erle_estimator
+build obj/modules/audio_processing/aec3/aec3/matched_filter.o: cxx ../../modules/audio_processing/aec3/matched_filter.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = matched_filter.cc
+  source_name_part = matched_filter
+build obj/modules/audio_processing/aec3/aec3/matched_filter_lag_aggregator.o: cxx ../../modules/audio_processing/aec3/matched_filter_lag_aggregator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = matched_filter_lag_aggregator.cc
+  source_name_part = matched_filter_lag_aggregator
+build obj/modules/audio_processing/aec3/aec3/moving_average.o: cxx ../../modules/audio_processing/aec3/moving_average.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = moving_average.cc
+  source_name_part = moving_average
+build obj/modules/audio_processing/aec3/aec3/multi_channel_content_detector.o: cxx ../../modules/audio_processing/aec3/multi_channel_content_detector.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = multi_channel_content_detector.cc
+  source_name_part = multi_channel_content_detector
+build obj/modules/audio_processing/aec3/aec3/refined_filter_update_gain.o: cxx ../../modules/audio_processing/aec3/refined_filter_update_gain.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = refined_filter_update_gain.cc
+  source_name_part = refined_filter_update_gain
+build obj/modules/audio_processing/aec3/aec3/render_buffer.o: cxx ../../modules/audio_processing/aec3/render_buffer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = render_buffer.cc
+  source_name_part = render_buffer
+build obj/modules/audio_processing/aec3/aec3/render_delay_buffer.o: cxx ../../modules/audio_processing/aec3/render_delay_buffer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = render_delay_buffer.cc
+  source_name_part = render_delay_buffer
+build obj/modules/audio_processing/aec3/aec3/render_delay_controller.o: cxx ../../modules/audio_processing/aec3/render_delay_controller.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = render_delay_controller.cc
+  source_name_part = render_delay_controller
+build obj/modules/audio_processing/aec3/aec3/render_delay_controller_metrics.o: cxx ../../modules/audio_processing/aec3/render_delay_controller_metrics.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = render_delay_controller_metrics.cc
+  source_name_part = render_delay_controller_metrics
+build obj/modules/audio_processing/aec3/aec3/render_signal_analyzer.o: cxx ../../modules/audio_processing/aec3/render_signal_analyzer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = render_signal_analyzer.cc
+  source_name_part = render_signal_analyzer
+build obj/modules/audio_processing/aec3/aec3/residual_echo_estimator.o: cxx ../../modules/audio_processing/aec3/residual_echo_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = residual_echo_estimator.cc
+  source_name_part = residual_echo_estimator
+build obj/modules/audio_processing/aec3/aec3/reverb_decay_estimator.o: cxx ../../modules/audio_processing/aec3/reverb_decay_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = reverb_decay_estimator.cc
+  source_name_part = reverb_decay_estimator
+build obj/modules/audio_processing/aec3/aec3/reverb_frequency_response.o: cxx ../../modules/audio_processing/aec3/reverb_frequency_response.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = reverb_frequency_response.cc
+  source_name_part = reverb_frequency_response
+build obj/modules/audio_processing/aec3/aec3/reverb_model.o: cxx ../../modules/audio_processing/aec3/reverb_model.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = reverb_model.cc
+  source_name_part = reverb_model
+build obj/modules/audio_processing/aec3/aec3/reverb_model_estimator.o: cxx ../../modules/audio_processing/aec3/reverb_model_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = reverb_model_estimator.cc
+  source_name_part = reverb_model_estimator
+build obj/modules/audio_processing/aec3/aec3/signal_dependent_erle_estimator.o: cxx ../../modules/audio_processing/aec3/signal_dependent_erle_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = signal_dependent_erle_estimator.cc
+  source_name_part = signal_dependent_erle_estimator
+build obj/modules/audio_processing/aec3/aec3/spectrum_buffer.o: cxx ../../modules/audio_processing/aec3/spectrum_buffer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = spectrum_buffer.cc
+  source_name_part = spectrum_buffer
+build obj/modules/audio_processing/aec3/aec3/stationarity_estimator.o: cxx ../../modules/audio_processing/aec3/stationarity_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = stationarity_estimator.cc
+  source_name_part = stationarity_estimator
+build obj/modules/audio_processing/aec3/aec3/subband_erle_estimator.o: cxx ../../modules/audio_processing/aec3/subband_erle_estimator.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = subband_erle_estimator.cc
+  source_name_part = subband_erle_estimator
+build obj/modules/audio_processing/aec3/aec3/subband_nearend_detector.o: cxx ../../modules/audio_processing/aec3/subband_nearend_detector.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = subband_nearend_detector.cc
+  source_name_part = subband_nearend_detector
+build obj/modules/audio_processing/aec3/aec3/subtractor.o: cxx ../../modules/audio_processing/aec3/subtractor.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = subtractor.cc
+  source_name_part = subtractor
+build obj/modules/audio_processing/aec3/aec3/subtractor_output.o: cxx ../../modules/audio_processing/aec3/subtractor_output.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = subtractor_output.cc
+  source_name_part = subtractor_output
+build obj/modules/audio_processing/aec3/aec3/subtractor_output_analyzer.o: cxx ../../modules/audio_processing/aec3/subtractor_output_analyzer.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = subtractor_output_analyzer.cc
+  source_name_part = subtractor_output_analyzer
+build obj/modules/audio_processing/aec3/aec3/suppression_filter.o: cxx ../../modules/audio_processing/aec3/suppression_filter.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = suppression_filter.cc
+  source_name_part = suppression_filter
+build obj/modules/audio_processing/aec3/aec3/suppression_gain.o: cxx ../../modules/audio_processing/aec3/suppression_gain.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = suppression_gain.cc
+  source_name_part = suppression_gain
+build obj/modules/audio_processing/aec3/aec3/transparent_mode.o: cxx ../../modules/audio_processing/aec3/transparent_mode.cc || obj/experiments/registered_field_trials_header.stamp
+  source_file_part = transparent_mode.cc
+  source_name_part = transparent_mode
+
+build obj/modules/audio_processing/aec3/libaec3.a: alink obj/modules/audio_processing/aec3/aec3/adaptive_fir_filter.o obj/modules/audio_processing/aec3/aec3/adaptive_fir_filter_erl.o obj/modules/audio_processing/aec3/aec3/aec3_common.o obj/modules/audio_processing/aec3/aec3/aec3_fft.o obj/modules/audio_processing/aec3/aec3/aec_state.o obj/modules/audio_processing/aec3/aec3/alignment_mixer.o obj/modules/audio_processing/aec3/aec3/api_call_jitter_metrics.o obj/modules/audio_processing/aec3/aec3/block_buffer.o obj/modules/audio_processing/aec3/aec3/block_delay_buffer.o obj/modules/audio_processing/aec3/aec3/block_framer.o obj/modules/audio_processing/aec3/aec3/block_processor.o obj/modules/audio_processing/aec3/aec3/block_processor_metrics.o obj/modules/audio_processing/aec3/aec3/clockdrift_detector.o obj/modules/audio_processing/aec3/aec3/coarse_filter_update_gain.o obj/modules/audio_processing/aec3/aec3/comfort_noise_generator.o obj/modules/audio_processing/aec3/aec3/config_selector.o obj/modules/audio_processing/aec3/aec3/decimator.o obj/modules/audio_processing/aec3/aec3/dominant_nearend_detector.o obj/modules/audio_processing/aec3/aec3/downsampled_render_buffer.o obj/modules/audio_processing/aec3/aec3/echo_audibility.o obj/modules/audio_processing/aec3/aec3/echo_canceller3.o obj/modules/audio_processing/aec3/aec3/echo_path_delay_estimator.o obj/modules/audio_processing/aec3/aec3/echo_path_variability.o obj/modules/audio_processing/aec3/aec3/echo_remover.o obj/modules/audio_processing/aec3/aec3/echo_remover_metrics.o obj/modules/audio_processing/aec3/aec3/erl_estimator.o obj/modules/audio_processing/aec3/aec3/erle_estimator.o obj/modules/audio_processing/aec3/aec3/fft_buffer.o obj/modules/audio_processing/aec3/aec3/filter_analyzer.o obj/modules/audio_processing/aec3/aec3/frame_blocker.o obj/modules/audio_processing/aec3/aec3/fullband_erle_estimator.o obj/modules/audio_processing/aec3/aec3/matched_filter.o obj/modules/audio_processing/aec3/aec3/matched_filter_lag_aggregator.o obj/modules/audio_processing/aec3/aec3/moving_average.o obj/modules/audio_processing/aec3/aec3/multi_channel_content_detector.o obj/modules/audio_processing/aec3/aec3/refined_filter_update_gain.o obj/modules/audio_processing/aec3/aec3/render_buffer.o obj/modules/audio_processing/aec3/aec3/render_delay_buffer.o obj/modules/audio_processing/aec3/aec3/render_delay_controller.o obj/modules/audio_processing/aec3/aec3/render_delay_controller_metrics.o obj/modules/audio_processing/aec3/aec3/render_signal_analyzer.o obj/modules/audio_processing/aec3/aec3/residual_echo_estimator.o obj/modules/audio_processing/aec3/aec3/reverb_decay_estimator.o obj/modules/audio_processing/aec3/aec3/reverb_frequency_response.o obj/modules/audio_processing/aec3/aec3/reverb_model.o obj/modules/audio_processing/aec3/aec3/reverb_model_estimator.o obj/modules/audio_processing/aec3/aec3/signal_dependent_erle_estimator.o obj/modules/audio_processing/aec3/aec3/spectrum_buffer.o obj/modules/audio_processing/aec3/aec3/stationarity_estimator.o obj/modules/audio_processing/aec3/aec3/subband_erle_estimator.o obj/modules/audio_processing/aec3/aec3/subband_nearend_detector.o obj/modules/audio_processing/aec3/aec3/subtractor.o obj/modules/audio_processing/aec3/aec3/subtractor_output.o obj/modules/audio_processing/aec3/aec3/subtractor_output_analyzer.o obj/modules/audio_processing/aec3/aec3/suppression_filter.o obj/modules/audio_processing/aec3/aec3/suppression_gain.o obj/modules/audio_processing/aec3/aec3/transparent_mode.o || obj/modules/audio_processing/aec3/adaptive_fir_filter.stamp obj/modules/audio_processing/aec3/adaptive_fir_filter_erl.stamp obj/modules/audio_processing/aec3/aec3_common.stamp obj/modules/audio_processing/aec3/aec3_fft.stamp obj/modules/audio_processing/aec3/fft_data.stamp obj/modules/audio_processing/aec3/matched_filter.stamp obj/modules/audio_processing/aec3/render_buffer.stamp obj/modules/audio_processing/aec3/vector_math.stamp obj/modules/audio_processing/libapm_logging.a obj/modules/audio_processing/libaudio_buffer.a obj/modules/audio_processing/libhigh_pass_filter.a obj/api/array_view.stamp obj/api/audio/libaec3_config.a obj/api/audio/echo_control.stamp obj/common_audio/libcommon_audio_c.a obj/rtc_base/libchecks.a obj/rtc_base/liblogging.a obj/rtc_base/macromagic.stamp obj/rtc_base/librace_checker.a obj/rtc_base/safe_minmax.stamp obj/rtc_base/swap_queue.stamp obj/rtc_base/experiments/libfield_trial_parser.a obj/rtc_base/system/arch.stamp obj/system_wrappers/libsystem_wrappers.a obj/system_wrappers/libfield_trial.a obj/system_wrappers/libmetrics.a obj/modules/audio_processing/utility/libcascaded_biquad_filter.a obj/third_party/abseil-cpp/absl/strings/strings.stamp obj/third_party/abseil-cpp/absl/types/optional.stamp obj/rtc_base/safe_compare.stamp obj/rtc_base/type_traits.stamp obj/api/scoped_refptr.stamp obj/rtc_base/system/inline.stamp obj/rtc_base/system/rtc_export.stamp obj/third_party/abseil-cpp/absl/meta/type_traits.stamp obj/third_party/abseil-cpp/absl/base/config.stamp obj/third_party/abseil-cpp/absl/base/core_headers.stamp obj/third_party/abseil-cpp/absl/strings/string_view.stamp obj/third_party/abseil-cpp/absl/base/base.stamp obj/third_party/abseil-cpp/absl/base/atomic_hook.stamp obj/third_party/abseil-cpp/absl/base/base_internal.stamp obj/third_party/abseil-cpp/absl/base/cycleclock_internal.stamp obj/third_party/abseil-cpp/absl/base/dynamic_annotations.stamp obj/third_party/abseil-cpp/absl/base/log_severity.stamp obj/third_party/abseil-cpp/absl/base/raw_logging_internal.stamp obj/third_party/abseil-cpp/absl/base/errno_saver.stamp obj/third_party/abseil-cpp/absl/base/spinlock_wait.stamp obj/third_party/abseil-cpp/absl/base/throw_delegate.stamp obj/third_party/abseil-cpp/absl/strings/charset.stamp obj/third_party/abseil-cpp/absl/strings/internal.stamp obj/third_party/abseil-cpp/absl/base/endian.stamp obj/third_party/abseil-cpp/absl/memory/memory.stamp obj/third_party/abseil-cpp/absl/numeric/bits.stamp obj/third_party/abseil-cpp/absl/numeric/int128.stamp obj/common_audio/third_party/ooura/libfft_size_128.a obj/experiments/registered_field_trials.stamp obj/rtc_base/libplatform_thread_types.a obj/rtc_base/libstringutils.a obj/third_party/abseil-cpp/absl/types/bad_optional_access.stamp obj/third_party/abseil-cpp/absl/utility/utility.stamp obj/rtc_base/libtimeutils.a obj/rtc_base/safe_conversions.stamp obj/api/units/libtimestamp.a obj/api/units/libtime_delta.a obj/rtc_base/units/unit_base.stamp obj/rtc_base/divide_round.stamp obj/rtc_base/synchronization/mutex.stamp obj/rtc_base/synchronization/libyield.a obj/rtc_base/system/no_unique_address.stamp obj/rtc_base/containers/flat_set.stamp obj/rtc_base/containers/libflat_containers_internal.a obj/third_party/abseil-cpp/absl/algorithm/container.stamp obj/third_party/abseil-cpp/absl/algorithm/algorithm.stamp obj/modules/module_api_public.stamp obj/third_party/cpu_features/ndk_compat.stamp obj/third_party/cpu_features/cpuinfo.stamp obj/rtc_base/librtc_numerics.a obj/rtc_base/mod_ops.stamp obj/common_audio/libcommon_audio.a obj/common_audio/common_audio_c_arm_asm.stamp obj/common_audio/libcommon_audio_cc.a obj/rtc_base/compile_assert_c.stamp obj/rtc_base/sanitizer.stamp obj/common_audio/third_party/ooura/libfft_size_256.a obj/common_audio/third_party/spl_sqrt_floor/libspl_sqrt_floor.a obj/common_audio/sinc_resampler.stamp obj/rtc_base/gtest_prod.stamp obj/rtc_base/memory/libaligned_malloc.a obj/rtc_base/system/libfile_wrapper.a obj/rtc_base/libcriticalsection.a obj/rtc_base/system/unused.stamp obj/common_audio/libcommon_audio_neon.a obj/common_audio/libcommon_audio_neon_c.a obj/common_audio/fir_filter.stamp obj/modules/audio_processing/libapi.a obj/modules/audio_processing/audio_frame_view.stamp obj/modules/audio_processing/libaudio_processing_statistics.a obj/api/audio/libaudio_frame_api.a obj/api/librtp_packet_info.a obj/api/make_ref_counted.stamp obj/rtc_base/refcount.stamp obj/api/refcountedbase.stamp obj/api/librtp_headers.a obj/api/video/libvideo_rtp_headers.a obj/api/units/libdata_rate.a obj/api/units/libdata_size.a obj/api/units/libfrequency.a obj/third_party/abseil-cpp/absl/container/inlined_vector.stamp obj/third_party/abseil-cpp/absl/container/inlined_vector_internal.stamp obj/third_party/abseil-cpp/absl/container/compressed_tuple.stamp obj/third_party/abseil-cpp/absl/types/span.stamp obj/modules/audio_processing/agc/gain_control_interface.stamp
+  arflags = -T
+  output_extension = .a
+  output_dir = obj/modules/audio_processing/aec3
