@@ -217,15 +217,12 @@ jobs:
           -I./third_party/abseil-cpp \
           -I$JNI_INCLUDE \
           -I$JNI_INCLUDE/linux \
-          -isystem $SYSROOT/usr/include \
-          -isystem $SYSROOT/usr/include/$ARCH_INCLUDE \
           -std=c++17 \
           -fPIC \
           -DWEBRTC_POSIX \
           -DWEBRTC_ANDROID \
           -DWEBRTC_LINUX \
-          -O2 \
-          -nostdinc++
+          -O2
 
         echo "✓ JNI wrapper compiled"
 
