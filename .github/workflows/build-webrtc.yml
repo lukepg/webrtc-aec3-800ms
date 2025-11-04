@@ -199,11 +199,16 @@ jobs:
         # Compile JNI wrapper
         mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj
 
+        # Find JNI headers (from Java in WebRTC's third_party)
+        JNI_INCLUDE="third_party/jdk/current/include"
+
         $CXX --target=${TARGET}21 \
           -c $GITHUB_WORKSPACE/jni/webrtc_apm_jni.cpp \
           -o $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/obj/webrtc_apm_jni.o \
           -I. \
           -I./third_party/abseil-cpp \
+          -I$JNI_INCLUDE \
+          -I$JNI_INCLUDE/linux \
           -std=c++17 \
           -fPIC \
           -DWEBRTC_POSIX \
