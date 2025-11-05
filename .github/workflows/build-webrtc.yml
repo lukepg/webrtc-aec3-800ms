@@ -129,23 +129,16 @@ jobs:
         # Append our shared library target to the existing BUILD.gn
         cat >> modules/audio_processing/BUILD.gn <<'BUILDGN'
 
-        # Custom JNI wrapper for Android
-        rtc_shared_library("webrtc_apms") {
+        # Build everything into one static library first
+        rtc_static_library("webrtc_apms_complete") {
           sources = [
             "webrtc_apm_jni.cpp",
           ]
 
-          public_deps = [
+          complete_static_lib = true
+
+          deps = [
             ":audio_processing",
-          ]
-
-          if (is_android) {
-            libs = [ "log" ]
-          }
-
-          ldflags = [
-            "-Wl,-soname,libwebrtc_apms.so",
-            "-Wl,--no-gc-sections",
           ]
         }
         BUILDGN
@@ -188,8 +181,27 @@ jobs:
 
         echo "Building WebRTC with JNI wrapper using GN/Ninja..."
 
-        # Build our shared library target (GN will handle all dependencies)
-        ninja -C out/${{ matrix.arch }} modules/audio_processing:webrtc_apms
+        # Build static library with all dependencies
+        ninja -C out/${{ matrix.arch }} modules/audio_processing:webrtc_apms_complete
+
+        echo ""
+        echo "Static library built. Converting to shared library..."
+
+        # Get the Android NDK compiler
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          CC="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++"
+        else
+          CC="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++"
+        fi
+
+        # Convert static library to shared library with all symbols
+        $CC -shared -o out/${{ matrix.arch }}/libwebrtc_apms.so \
+          -Wl,-soname,libwebrtc_apms.so \
+          -Wl,--whole-archive \
+          out/${{ matrix.arch }}/obj/modules/audio_processing/libwebrtc_apms_complete.a \
+          -Wl,--no-whole-archive \
+          -llog -lc++_shared \
+          -Lout/${{ matrix.arch }}
 
         echo ""
         echo "Build complete! Checking outputs..."
@@ -203,9 +215,7 @@ jobs:
           mkdir -p $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}
           cp out/${{ matrix.arch }}/libwebrtc_apms.so $GITHUB_WORKSPACE/output/${{ env.ANDROID_ARCH }}/
         else
-          echo "❌ Library not found. Searching..."
-          find out/${{ matrix.arch }} -name "libwebrtc_apms.so" -type f
-          find out/${{ matrix.arch }} -name "*.so" -type f | head -10
+          echo "❌ Library not found"
           exit 1
         fi
 
