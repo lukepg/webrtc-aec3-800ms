@@ -139,13 +139,14 @@ jobs:
             ":audio_processing",
           ]
 
+          complete_static_lib = true
+
           if (is_android) {
             libs = [ "log" ]
           }
 
           ldflags = [
             "-Wl,-soname,libwebrtc_apms.so",
-            "-Wl,--whole-archive",
           ]
         }
         BUILDGN
