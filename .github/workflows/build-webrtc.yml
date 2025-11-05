@@ -137,8 +137,8 @@ jobs:
 
           deps = [
             ":audio_processing",
-            "//common_audio",
-            "//base:rtc_base",
+            "../../common_audio",
+            "../../base:rtc_base_approved",
           ]
 
           if (is_android) {
