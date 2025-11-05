@@ -135,11 +135,9 @@ jobs:
             "webrtc_apm_jni.cpp",
           ]
 
-          deps = [
+          public_deps = [
             ":audio_processing",
           ]
-
-          complete_static_lib = true
 
           if (is_android) {
             libs = [ "log" ]
@@ -147,6 +145,7 @@ jobs:
 
           ldflags = [
             "-Wl,-soname,libwebrtc_apms.so",
+            "-Wl,--no-gc-sections",
           ]
         }
         BUILDGN
