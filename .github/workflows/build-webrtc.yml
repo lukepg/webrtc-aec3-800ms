@@ -190,15 +190,21 @@ jobs:
         # Use WebRTC's own clang++ from the build toolchain
         WEBRTC_CLANG="$HOME/webrtc/src/third_party/llvm-build/Release+Asserts/bin/clang++"
 
-        # Set target architecture
+        # WebRTC uses its own Android toolchain, find the sysroot
+        WEBRTC_ANDROID_TOOLCHAIN="$HOME/webrtc/src/third_party/android_toolchain"
+
+        # Set target architecture and sysroot
         if [ "${{ matrix.arch }}" == "arm64" ]; then
           TARGET="aarch64-linux-android21"
+          SYSROOT="$WEBRTC_ANDROID_TOOLCHAIN/ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
         else
           TARGET="armv7a-linux-androideabi21"
+          SYSROOT="$WEBRTC_ANDROID_TOOLCHAIN/ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
         fi
 
         echo "Using WebRTC's clang++: $WEBRTC_CLANG"
         echo "Target: $TARGET"
+        echo "Sysroot: $SYSROOT"
 
         # Check if WebRTC's clang++ exists
         if [ ! -f "$WEBRTC_CLANG" ]; then
@@ -208,15 +214,25 @@ jobs:
           exit 1
         fi
 
+        # Check if sysroot exists
+        if [ ! -d "$SYSROOT" ]; then
+          echo "WARNING: Sysroot not found at $SYSROOT"
+          echo "Looking for Android NDK in WebRTC..."
+          find $HOME/webrtc/src/third_party -name "sysroot" -type d | head -5
+          echo "Trying alternative sysroot..."
+          SYSROOT="$HOME/webrtc/src/buildtools/third_party/android_ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+        fi
+
         # Convert static library to shared library with all symbols
         $WEBRTC_CLANG -shared -o out/${{ matrix.arch }}/libwebrtc_apms.so \
           --target=$TARGET \
+          --sysroot=$SYSROOT \
           -Wl,-soname,libwebrtc_apms.so \
           -Wl,--whole-archive \
           out/${{ matrix.arch }}/obj/modules/audio_processing/libwebrtc_apms_complete.a \
           -Wl,--no-whole-archive \
-          -llog \
-          -Lout/${{ matrix.arch }}
+          -llog -lc -lm -ldl \
+          -L$SYSROOT/usr/lib/$TARGET
 
         echo ""
         echo "Build complete! Checking outputs..."
