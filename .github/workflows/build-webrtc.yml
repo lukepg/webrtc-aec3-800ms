@@ -187,17 +187,32 @@ jobs:
         echo ""
         echo "Static library built. Converting to shared library..."
 
-        # Find the Android NDK compiler
-        NDK_PATH=$(find /usr/local/lib/android/sdk/ndk -name "aarch64-linux-android*-clang++" | head -1)
-        if [ -z "$NDK_PATH" ]; then
-          # Try alternate location
-          NDK_PATH=$(find $ANDROID_HOME/ndk -name "aarch64-linux-android*-clang++" | head -1)
+        # Find the Android NDK location
+        echo "Looking for NDK..."
+        echo "ANDROID_HOME=$ANDROID_HOME"
+        echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+
+        # List NDK installations
+        ls -la $ANDROID_HOME/ndk/ 2>/dev/null || echo "No NDK in ANDROID_HOME"
+
+        # Find the compiler
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          CC=$(find $ANDROID_HOME -name "aarch64-linux-android*-clang++" 2>/dev/null | grep -v "renderscript" | head -1)
+          if [ -z "$CC" ]; then
+            CC=$(find $ANDROID_NDK_HOME -name "aarch64-linux-android*-clang++" 2>/dev/null | head -1)
+          fi
+        else
+          CC=$(find $ANDROID_HOME -name "armv7a-linux-androideabi*-clang++" 2>/dev/null | grep -v "renderscript" | head -1)
+          if [ -z "$CC" ]; then
+            CC=$(find $ANDROID_NDK_HOME -name "armv7a-linux-androideabi*-clang++" 2>/dev/null | head -1)
+          fi
         fi
 
-        if [ "${{ matrix.arch }}" == "arm64" ]; then
-          CC=$(find /usr/local/lib/android/sdk/ndk -name "aarch64-linux-android*-clang++" | head -1)
-        else
-          CC=$(find /usr/local/lib/android/sdk/ndk -name "armv7a-linux-androideabi*-clang++" | head -1)
+        if [ -z "$CC" ]; then
+          echo "ERROR: Could not find NDK compiler"
+          echo "Searching for any clang++ in common locations..."
+          find /usr/local -name "*clang++" 2>/dev/null | head -10
+          exit 1
         fi
 
         echo "Using compiler: $CC"
