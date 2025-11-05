@@ -137,8 +137,6 @@ jobs:
 
           deps = [
             ":audio_processing",
-            "../../common_audio",
-            "../../base:rtc_base_approved",
           ]
 
           if (is_android) {
@@ -147,6 +145,7 @@ jobs:
 
           ldflags = [
             "-Wl,-soname,libwebrtc_apms.so",
+            "-Wl,--whole-archive",
           ]
         }
         BUILDGN
