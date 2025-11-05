@@ -187,12 +187,20 @@ jobs:
         echo ""
         echo "Static library built. Converting to shared library..."
 
-        # Get the Android NDK compiler
-        if [ "${{ matrix.arch }}" == "arm64" ]; then
-          CC="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++"
-        else
-          CC="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang++"
+        # Find the Android NDK compiler
+        NDK_PATH=$(find /usr/local/lib/android/sdk/ndk -name "aarch64-linux-android*-clang++" | head -1)
+        if [ -z "$NDK_PATH" ]; then
+          # Try alternate location
+          NDK_PATH=$(find $ANDROID_HOME/ndk -name "aarch64-linux-android*-clang++" | head -1)
         fi
+
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          CC=$(find /usr/local/lib/android/sdk/ndk -name "aarch64-linux-android*-clang++" | head -1)
+        else
+          CC=$(find /usr/local/lib/android/sdk/ndk -name "armv7a-linux-androideabi*-clang++" | head -1)
+        fi
+
+        echo "Using compiler: $CC"
 
         # Convert static library to shared library with all symbols
         $CC -shared -o out/${{ matrix.arch }}/libwebrtc_apms.so \
