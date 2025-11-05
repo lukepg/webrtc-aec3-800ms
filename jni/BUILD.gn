@@ -9,10 +9,8 @@ shared_library("webrtc_apms") {
 
   deps = [
     "//modules/audio_processing",
-    "//rtc_base",
+    "//base:rtc_base",
     "//common_audio",
-    "//api:scoped_refptr",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   ldflags = [
