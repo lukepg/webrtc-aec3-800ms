@@ -224,6 +224,7 @@ jobs:
         fi
 
         # Convert static library to shared library with all symbols
+        # Let clang++ automatically link system libraries, only specify what we need
         $WEBRTC_CLANG -shared -o out/${{ matrix.arch }}/libwebrtc_apms.so \
           --target=$TARGET \
           --sysroot=$SYSROOT \
@@ -231,8 +232,7 @@ jobs:
           -Wl,--whole-archive \
           out/${{ matrix.arch }}/obj/modules/audio_processing/libwebrtc_apms_complete.a \
           -Wl,--no-whole-archive \
-          -llog -lc -lm -ldl \
-          -L$SYSROOT/usr/lib/$TARGET
+          -llog
 
         echo ""
         echo "Build complete! Checking outputs..."
