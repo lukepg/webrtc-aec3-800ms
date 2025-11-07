@@ -224,16 +224,17 @@ jobs:
         fi
 
         # Convert static library to shared library with all symbols
-        # Use -nostdlib++ to avoid automatic libunwind linking, manually specify needed libs
+        # Use -nodefaultlibs to prevent ALL automatic linking (including libunwind)
+        # Manually specify only the libraries we actually need
         $WEBRTC_CLANG -shared -o out/${{ matrix.arch }}/libwebrtc_apms.so \
           --target=$TARGET \
           --sysroot=$SYSROOT \
-          -nostdlib++ \
+          -nodefaultlibs \
           -Wl,-soname,libwebrtc_apms.so \
           -Wl,--whole-archive \
           out/${{ matrix.arch }}/obj/modules/audio_processing/libwebrtc_apms_complete.a \
           -Wl,--no-whole-archive \
-          -llog -lc -lm -ldl
+          -lc -lm -ldl -llog
 
         echo ""
         echo "Build complete! Checking outputs..."
