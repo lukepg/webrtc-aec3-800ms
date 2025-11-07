@@ -225,7 +225,7 @@ jobs:
 
         # Convert static library to shared library with all symbols
         # Use -nodefaultlibs to prevent ALL automatic linking (including libunwind)
-        # Manually specify only the libraries we actually need
+        # Manually specify only the libraries we actually need: C runtime, math, C++ runtime, logging
         $WEBRTC_CLANG -shared -o out/${{ matrix.arch }}/libwebrtc_apms.so \
           --target=$TARGET \
           --sysroot=$SYSROOT \
@@ -234,7 +234,7 @@ jobs:
           -Wl,--whole-archive \
           out/${{ matrix.arch }}/obj/modules/audio_processing/libwebrtc_apms_complete.a \
           -Wl,--no-whole-archive \
-          -lc -lm -ldl -llog
+          -lc++ -lc -lm -ldl -llog
 
         echo ""
         echo "Build complete! Checking outputs..."
