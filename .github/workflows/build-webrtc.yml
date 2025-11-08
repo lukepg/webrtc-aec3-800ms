@@ -198,10 +198,17 @@ jobs:
         # Compile atomic stubs to provide ARM LSE atomic compatibility
         echo "Compiling atomic stubs for Android 8.0+ compatibility..."
         WEBRTC_CLANG="$HOME/webrtc/src/third_party/llvm-build/Release+Asserts/bin/clang"
+        WEBRTC_ANDROID_TOOLCHAIN="$HOME/webrtc/src/third_party/android_toolchain"
 
         if [ "${{ matrix.arch }}" == "arm64" ]; then
+          SYSROOT="$WEBRTC_ANDROID_TOOLCHAIN/ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+          if [ ! -d "$SYSROOT" ]; then
+            SYSROOT="$HOME/webrtc/src/buildtools/third_party/android_ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+          fi
+
           $WEBRTC_CLANG -c $GITHUB_WORKSPACE/atomic_stubs.c -o out/${{ matrix.arch }}/atomic_stubs.o \
             --target=aarch64-linux-android21 \
+            --sysroot=$SYSROOT \
             -march=armv8-a \
             -O2
         fi
