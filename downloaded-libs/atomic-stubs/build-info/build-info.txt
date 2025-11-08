@@ -1,0 +1,24 @@
+WebRTC AEC3 800ms Support Build
+================================
+
+Build Date: 2025-11-08 18:56:05 UTC
+WebRTC Branch: branch-heads/6099
+Commit: b0b827e0fa26f6dc141807c8bbd41c050029483b
+
+Modifications:
+- AEC3 filter partitions increased to 40 (from 12)
+- Maximum delay support: 800ms
+- Render buffer extended to 1200ms
+- Optimized for Bluetooth speaker scenarios
+
+Architectures:
+- arm64-v8a
+- armeabi-v7a
+
+Library Sizes:
+-rwxr-xr-x 1 runner runner 4.4M Nov  8 18:56 /home/runner/work/webrtc-aec3-800ms/webrtc-aec3-800ms/output/arm64-v8a/libwebrtc_apms.so
+
+Integration:
+Copy the .so files to your Android project:
+  app/src/main/jniLibs/arm64-v8a/libwebrtc_apms.so
+  app/src/main/jniLibs/armeabi-v7a/libwebrtc_apms.so
