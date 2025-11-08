@@ -55,9 +55,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/webrtc/src/out/${{ matrix.arch }}
-        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v6-custom-libcxx
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v7-atomic-stubs
         restore-keys: |
-          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v6-custom-libcxx
+          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v7-atomic-stubs
 
     - name: Free up disk space
       uses: jlumbroso/free-disk-space@main
@@ -195,6 +195,19 @@ jobs:
         echo ""
         echo "Static library built. Converting to shared library..."
 
+        # Compile atomic stubs to provide ARM LSE atomic compatibility
+        echo "Compiling atomic stubs for Android 8.0+ compatibility..."
+        WEBRTC_CLANG="$HOME/webrtc/src/third_party/llvm-build/Release+Asserts/bin/clang"
+
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          $WEBRTC_CLANG -c $GITHUB_WORKSPACE/atomic_stubs.c -o out/${{ matrix.arch }}/atomic_stubs.o \
+            --target=aarch64-linux-android21 \
+            -march=armv8-a \
+            -O2
+        fi
+
+        echo "Atomic stubs compiled successfully"
+
         # Use WebRTC's own clang++ from the build toolchain
         WEBRTC_CLANG="$HOME/webrtc/src/third_party/llvm-build/Release+Asserts/bin/clang++"
 
@@ -235,6 +248,13 @@ jobs:
         # Use -nodefaultlibs to prevent ALL automatic linking (including libunwind)
         # Manually specify only the libraries we actually need: C runtime, math, C++ runtime, logging
         # Add -mno-outline-atomics to avoid ARM LSE atomics that aren't supported on older Android
+        # Include atomic_stubs.o to provide fallback implementations of ARM LSE atomic helpers
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          ATOMIC_STUBS="out/${{ matrix.arch }}/atomic_stubs.o"
+        else
+          ATOMIC_STUBS=""
+        fi
+
         $WEBRTC_CLANG -shared -o out/${{ matrix.arch }}/libwebrtc_apms.so \
           --target=$TARGET \
           --sysroot=$SYSROOT \
@@ -244,6 +264,7 @@ jobs:
           -Wl,--whole-archive \
           out/${{ matrix.arch }}/obj/modules/audio_processing/libwebrtc_apms_complete.a \
           -Wl,--no-whole-archive \
+          $ATOMIC_STUBS \
           -lc++ -lc -lm -ldl -llog
 
         echo ""
