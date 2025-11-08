@@ -90,3 +90,21 @@ uint64_t __aarch64_swp8_relax(uint64_t value, uint64_t *ptr) {
     );
     return result;
 }
+
+// Compare-and-swap operations
+uint64_t __aarch64_cas8_acq_rel(uint64_t expected, uint64_t desired, uint64_t *ptr) {
+    uint64_t result;
+    uint32_t status;
+    __asm__ __volatile__(
+        "1: ldaxr %0, [%3]\n"
+        "   cmp %0, %4\n"
+        "   b.ne 2f\n"
+        "   stlxr %w1, %5, [%3]\n"
+        "   cbnz %w1, 1b\n"
+        "2:\n"
+        : "=&r"(result), "=&r"(status)
+        : "r"(expected), "r"(ptr), "r"(expected), "r"(desired)
+        : "memory", "cc"
+    );
+    return result;
+}
