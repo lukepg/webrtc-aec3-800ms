@@ -55,9 +55,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/webrtc/src/out/${{ matrix.arch }}
-        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v4-api21
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v5-march-armv8a
         restore-keys: |
-          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v4-api21
+          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v5-march-armv8a
 
     - name: Free up disk space
       uses: jlumbroso/free-disk-space@main
@@ -151,14 +151,8 @@ jobs:
         cd ~/webrtc/src
 
         # Generate GN build files including our JNI wrapper
-        # Set Android API level to 21 to avoid ARM LSE atomics (requires API 28+)
-        # Add -mno-outline-atomics as extra safety measure
-        if [ "${{ matrix.arch }}" == "arm64" ]; then
-          API_LEVEL=21
-        else
-          API_LEVEL=21
-        fi
-
+        # Use -march=armv8-a (without +lse) and -mno-outline-atomics to prevent ARM LSE atomics
+        # ARM LSE atomics require Android 9.0+ but we need to support Android 8.0+ (API 26+)
         gn gen out/${{ matrix.arch }} --args='
           target_os="android"
           target_cpu="${{ matrix.arch }}"
@@ -173,8 +167,9 @@ jobs:
           use_rtti=true
           use_custom_libcxx=false
           treat_warnings_as_errors=false
-          extra_cflags=["-mno-outline-atomics"]
-          extra_cxxflags=["-mno-outline-atomics"]
+          extra_cflags=["-mno-outline-atomics", "-march=armv8-a"]
+          extra_cxxflags=["-mno-outline-atomics", "-march=armv8-a"]
+          extra_ldflags=["-mno-outline-atomics", "-march=armv8-a"]
         '
 
     - name: Verify patch applied successfully

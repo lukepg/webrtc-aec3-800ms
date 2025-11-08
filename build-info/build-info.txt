@@ -1,7 +1,7 @@
 WebRTC AEC3 800ms Support Build
 ================================
 
-Build Date: 2025-11-04 20:04:53 UTC
+Build Date: 2025-11-07 15:46:56 UTC
 WebRTC Branch: branch-heads/6099
 Commit: b0b827e0fa26f6dc141807c8bbd41c050029483b
 
@@ -16,7 +16,7 @@ Architectures:
 - armeabi-v7a
 
 Library Sizes:
--rwxr-xr-x 1 runner runner 465K Nov  4 20:04 /home/runner/work/webrtc-aec3-800ms/webrtc-aec3-800ms/output/arm64-v8a/libwebrtc_apms.so
+-rwxr-xr-x 1 runner runner 3.9M Nov  7 15:46 /home/runner/work/webrtc-aec3-800ms/webrtc-aec3-800ms/output/arm64-v8a/libwebrtc_apms.so
 
 Integration:
 Copy the .so files to your Android project:
