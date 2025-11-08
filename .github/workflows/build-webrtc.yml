@@ -55,9 +55,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/webrtc/src/out/${{ matrix.arch }}
-        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v2
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v3-no-outline-atomics
         restore-keys: |
-          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v2
+          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v3-no-outline-atomics
 
     - name: Free up disk space
       uses: jlumbroso/free-disk-space@main
@@ -151,6 +151,7 @@ jobs:
         cd ~/webrtc/src
 
         # Generate GN build files including our JNI wrapper
+        # Add -mno-outline-atomics to avoid ARM LSE atomics not supported on older Android
         gn gen out/${{ matrix.arch }} --args='
           target_os="android"
           target_cpu="${{ matrix.arch }}"
@@ -163,6 +164,8 @@ jobs:
           use_rtti=true
           use_custom_libcxx=false
           treat_warnings_as_errors=false
+          extra_cflags=["-mno-outline-atomics"]
+          extra_cxxflags=["-mno-outline-atomics"]
         '
 
     - name: Verify patch applied successfully
