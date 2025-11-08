@@ -55,9 +55,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/webrtc/src/out/${{ matrix.arch }}
-        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v5-march-armv8a
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v6-custom-libcxx
         restore-keys: |
-          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v5-march-armv8a
+          webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v6-custom-libcxx
 
     - name: Free up disk space
       uses: jlumbroso/free-disk-space@main
@@ -153,6 +153,7 @@ jobs:
         # Generate GN build files including our JNI wrapper
         # Use -march=armv8-a (without +lse) and -mno-outline-atomics to prevent ARM LSE atomics
         # ARM LSE atomics require Android 9.0+ but we need to support Android 8.0+ (API 26+)
+        # use_custom_libcxx=true builds WebRTC's own libc++ with our flags instead of using NDK's libc++
         gn gen out/${{ matrix.arch }} --args='
           target_os="android"
           target_cpu="${{ matrix.arch }}"
@@ -165,7 +166,7 @@ jobs:
           rtc_build_examples=false
           rtc_build_tools=false
           use_rtti=true
-          use_custom_libcxx=false
+          use_custom_libcxx=true
           treat_warnings_as_errors=false
           extra_cflags=["-mno-outline-atomics", "-march=armv8-a"]
           extra_cxxflags=["-mno-outline-atomics", "-march=armv8-a"]
