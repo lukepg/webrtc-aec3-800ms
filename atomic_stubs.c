@@ -108,3 +108,36 @@ uint64_t __aarch64_cas8_acq_rel(uint64_t expected, uint64_t desired, uint64_t *p
     );
     return result;
 }
+
+// Compiler intrinsic: 128-bit left shift
+// __int128 __ashlti3(__int128 a, int b)
+typedef struct {
+    uint64_t low;
+    uint64_t high;
+} uint128_t;
+
+uint128_t __ashlti3(uint128_t a, int shift) {
+    uint128_t result;
+
+    if (shift == 0) {
+        return a;
+    }
+
+    if (shift >= 128) {
+        result.low = 0;
+        result.high = 0;
+        return result;
+    }
+
+    if (shift >= 64) {
+        // Shift more than 64 bits
+        result.low = 0;
+        result.high = a.low << (shift - 64);
+    } else {
+        // Shift less than 64 bits
+        result.low = a.low << shift;
+        result.high = (a.high << shift) | (a.low >> (64 - shift));
+    }
+
+    return result;
+}
