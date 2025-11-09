@@ -221,3 +221,34 @@ uint32_t __aarch64_cas4_acq_rel(uint32_t expected, uint32_t desired, uint32_t *p
     );
     return result;
 }
+
+// Long double (128-bit floating point) operations
+// These are used by WebRTC for high-precision floating point calculations
+// long double is represented as a struct with low and high 64-bit parts
+
+typedef long double tf_float;
+
+// Long double comparison: int __letf2(long double a, long double b)
+// Returns: a <= b ? 0 or negative : positive
+int __letf2(tf_float a, tf_float b) {
+    if (a < b) return -1;
+    if (a == b) return 0;
+    return 1;
+}
+
+// Convert long double to uint64_t: uint64_t __fixunstfdi(long double a)
+uint64_t __fixunstfdi(tf_float a) {
+    if (a < 0.0L) return 0;
+    if (a >= 18446744073709551615.0L) return UINT64_MAX;
+    return (uint64_t)a;
+}
+
+// Convert uint64_t to long double: long double __floatunditf(uint64_t a)
+tf_float __floatunditf(uint64_t a) {
+    return (tf_float)a;
+}
+
+// Long double subtraction: long double __subtf3(long double a, long double b)
+tf_float __subtf3(tf_float a, tf_float b) {
+    return a - b;
+}
