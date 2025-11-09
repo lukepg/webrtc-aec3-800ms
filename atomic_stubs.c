@@ -252,3 +252,26 @@ tf_float __floatunditf(uint64_t a) {
 tf_float __subtf3(tf_float a, tf_float b) {
     return a - b;
 }
+
+// Long double not-equal comparison: int __netf2(long double a, long double b)
+// Returns: a != b ? non-zero : 0
+int __netf2(tf_float a, tf_float b) {
+    if (a != b) return 1;
+    return 0;
+}
+
+// Long double less-than comparison: int __lttf2(long double a, long double b)
+// Returns: a < b ? negative : 0 or positive
+int __lttf2(tf_float a, tf_float b) {
+    if (a < b) return -1;
+    if (a == b) return 0;
+    return 1;
+}
+
+// Long double greater-than-or-equal comparison: int __getf2(long double a, long double b)
+// Returns: a >= b ? 0 or positive : negative
+int __getf2(tf_float a, tf_float b) {
+    if (a < b) return -1;
+    if (a == b) return 0;
+    return 1;
+}
