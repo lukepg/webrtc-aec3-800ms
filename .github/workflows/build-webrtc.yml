@@ -55,7 +55,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/webrtc/src/out/${{ matrix.arch }}
-        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v8-system-libcxx
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v9-system-libcxx
         restore-keys: |
           webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v7-atomic-stubs
 
