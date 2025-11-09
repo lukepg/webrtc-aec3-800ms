@@ -21,6 +21,6 @@
 -    int coarse_reset_hangover_blocks = 25;
 +    float initial_state_seconds = 4.0f;
 +    int coarse_reset_hangover_blocks = 40;
-     bool conservative_initial_phase = false;
++    bool conservative_initial_phase = true;
      bool enable_coarse_filter_output_usage = true;
      bool use_linear_filter = true;
