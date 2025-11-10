@@ -512,10 +512,11 @@ Java_com_webrtc_audioprocessing_Apm_ProcessStream(
         return -3;
     }
 
-    // Convert to float
+    // Convert to normalized float [-1.0, 1.0]
+    // WebRTC M120 expects normalized floats, NOT raw int16 values!
     float float_buffer[frame_size];
     for (int i = 0; i < frame_size; i++) {
-        float_buffer[i] = static_cast<float>(data[offset + i]);
+        float_buffer[i] = static_cast<float>(data[offset + i]) / 32768.0f;
     }
 
     // Process capture stream (microphone)
@@ -526,9 +527,12 @@ Java_com_webrtc_audioprocessing_Apm_ProcessStream(
         ctx->output_config,
         &channel_ptr);
 
-    // Convert back to short
+    // Convert back to int16, with proper clamping
     for (int i = 0; i < frame_size; i++) {
-        data[offset + i] = static_cast<jshort>(float_buffer[i]);
+        float sample = float_buffer[i] * 32768.0f;
+        if (sample > 32767.0f) sample = 32767.0f;
+        if (sample < -32768.0f) sample = -32768.0f;
+        data[offset + i] = static_cast<jshort>(sample);
     }
 
     env->ReleaseShortArrayElements(nearEnd, data, 0);
@@ -558,10 +562,11 @@ Java_com_webrtc_audioprocessing_Apm_ProcessReverseStream(
         return -3;
     }
 
-    // Convert to float
+    // Convert to normalized float [-1.0, 1.0]
+    // WebRTC M120 expects normalized floats, NOT raw int16 values!
     float float_buffer[frame_size];
     for (int i = 0; i < frame_size; i++) {
-        float_buffer[i] = static_cast<float>(data[offset + i]);
+        float_buffer[i] = static_cast<float>(data[offset + i]) / 32768.0f;
     }
 
     // Process render stream (speaker reference for AEC)
