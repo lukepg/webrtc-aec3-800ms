@@ -12,6 +12,8 @@
 
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/ref_counted_object.h"
+#include "api/audio/echo_canceller3_config.h"
+#include "api/audio/echo_canceller3_factory.h"
 
 #define LOG_TAG "WebRTC-APM-JNI"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -78,15 +80,37 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
     // High-pass filter (recommended for AEC)
     config.high_pass_filter.enabled = true;
 
-    // Create APM instance
-    g_apm = AudioProcessingBuilder().Create(config);
+    // Create custom AEC3 config for 800ms delay support
+    EchoCanceller3Config aec3_config;
+
+    // Set filter length to 40 blocks for 800ms delay support
+    // Each block is 4ms @ 16kHz, so 40 blocks = 160ms filter length
+    // Combined with render buffer, this supports delays up to 800ms
+    aec3_config.filter.refined.length_blocks = 40;
+    aec3_config.filter.coarse.length_blocks = 40;
+    aec3_config.filter.refined_initial.length_blocks = 40;
+    aec3_config.filter.coarse_initial.length_blocks = 40;
+
+    // Log the configuration
+    LOGD("AEC3 Config: filter length = 40 blocks (800ms delay support)");
+
+    // Create APM instance with custom AEC3 factory
+    if (nextGenerationAec) {
+        g_apm = AudioProcessingBuilder()
+            .SetEchoControlFactory(
+                std::make_unique<EchoCanceller3Factory>(aec3_config))
+            .Create(config);
+    } else {
+        // Legacy AEC without custom config
+        g_apm = AudioProcessingBuilder().Create(config);
+    }
 
     if (!g_apm) {
         LOGE("Failed to create APM instance");
         return 0;
     }
 
-    LOGD("APM instance created successfully (800ms AEC3 support)");
+    LOGD("APM instance created successfully (AEC3 with 40-block filter for 800ms support)");
     return reinterpret_cast<jlong>(g_apm.get());
 }
 
