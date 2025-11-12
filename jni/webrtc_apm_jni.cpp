@@ -63,9 +63,48 @@ extern "C" {
 // AEC3 Configuration Helper
 // ============================================================================
 
-// Note: WebRTC M120 doesn't support runtime configuration of EchoCanceller3Config
-// The suppression level is controlled by the patch file which modifies the default config
-// User-configurable suppression levels would require separate builds with different patches
+/**
+ * Create custom AEC3 configuration based on suppression level
+ *
+ * Suppression levels control the enr_suppress parameter in MaskingThresholds:
+ * - Lower values = more aggressive suppression (more echo removed, but may affect speech)
+ * - Higher values = less aggressive suppression (preserves more speech, but more echo)
+ *
+ * @param suppressionLevel 0=Low, 1=Moderate, 2=High (aggressive)
+ * @return EchoCanceller3Config with customized suppression settings
+ */
+static EchoCanceller3Config CreateAec3Config(int suppressionLevel) {
+    EchoCanceller3Config config;
+
+    // CRITICAL: Maintain 800ms filter support from patch
+    config.filter.refined.length_blocks = 40;  // 800ms support
+    config.filter.coarse.length_blocks = 40;
+
+    // Configure suppression based on user's preference
+    // enr_suppress controls how aggressively echo is removed
+    switch (suppressionLevel) {
+        case 0:  // Low suppression - preserves more speech quality
+            config.suppressor.normal_tuning.mask_lf.enr_suppress = 0.5f;   // Less aggressive low-freq
+            config.suppressor.normal_tuning.mask_hf.enr_suppress = 0.15f;  // Less aggressive high-freq
+            LOGI("AEC3 suppression: Low (enr_suppress: lf=0.5, hf=0.15)");
+            break;
+
+        case 1:  // Moderate suppression - balanced approach
+            config.suppressor.normal_tuning.mask_lf.enr_suppress = 0.4f;   // Default low-freq
+            config.suppressor.normal_tuning.mask_hf.enr_suppress = 0.1f;   // Default high-freq
+            LOGI("AEC3 suppression: Moderate (enr_suppress: lf=0.4, hf=0.1)");
+            break;
+
+        case 2:  // High suppression - aggressive echo removal
+        default:
+            config.suppressor.normal_tuning.mask_lf.enr_suppress = 0.3f;   // More aggressive low-freq
+            config.suppressor.normal_tuning.mask_hf.enr_suppress = 0.07f;  // More aggressive high-freq
+            LOGI("AEC3 suppression: High (enr_suppress: lf=0.3, hf=0.07)");
+            break;
+    }
+
+    return config;
+}
 
 // ============================================================================
 // APM Lifecycle
@@ -85,12 +124,8 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
     jint aecSuppressionLevel) {
 
     LOGI("Creating APM instance (AEC3 800ms support, M120)");
-    LOGD("  aecExtendFilter=%d, delayAgnostic=%d, nextGenAec=%d",
-         aecExtendFilter, delayAgnostic, nextGenerationAec);
-
-    // Note: aecSuppressionLevel parameter is accepted for API compatibility but not used
-    // WebRTC M120 doesn't support runtime AEC3 config - suppression is set by patch
-    (void)aecSuppressionLevel;  // Suppress unused parameter warning
+    LOGD("  aecExtendFilter=%d, delayAgnostic=%d, nextGenAec=%d, suppressionLevel=%d",
+         aecExtendFilter, delayAgnostic, nextGenerationAec, aecSuppressionLevel);
 
     // Create context
     ApmContext* ctx = new ApmContext();
@@ -103,11 +138,28 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
         config.echo_canceller.enabled = true;
         config.echo_canceller.mobile_mode = false;  // Use full AEC3, not mobile
 
-        LOGI("AEC3 enabled (delay-agnostic mode, 800ms support)");
+        // Create custom AEC3 configuration with user's suppression level
+        EchoCanceller3Config aec3_config = CreateAec3Config(aecSuppressionLevel);
+
+        // Build APM with custom AEC3 factory
+        // IMPORTANT: Pass config to factory constructor, then call Create() with NO arguments
+        ctx->apm = AudioProcessingBuilder()
+            .SetEchoControlFactory(std::make_unique<EchoCanceller3Factory>(aec3_config))
+            .Create();  // ← Must be .Create() with no arguments!
+
+        LOGI("AEC3 enabled (delay-agnostic mode, 800ms support, custom suppression)");
     } else {
-        // Legacy AEC (not recommended for Bluetooth)
+        // Create APM without custom AEC3 config
+        ctx->apm = AudioProcessingBuilder().Create();
+
         config.echo_canceller.enabled = false;
         LOGD("AEC3 disabled (legacy mode)");
+    }
+
+    if (!ctx->apm) {
+        LOGE("Failed to create APM instance");
+        delete ctx;
+        return JNI_FALSE;
     }
 
     // Noise suppression
@@ -127,18 +179,7 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
     // High-pass filter (removes low-frequency rumble, improves AEC)
     config.high_pass_filter.enabled = true;
 
-    // Create APM instance (custom AEC3 config will be applied through the patch)
-    // Note: WebRTC M120 doesn't support custom EchoCanceller3Config through factory constructor
-    // The suppression level is controlled by the patch that modifies the default AEC3 config
-    ctx->apm = AudioProcessingBuilder().Create();
-
-    if (!ctx->apm) {
-        LOGE("Failed to create APM instance");
-        delete ctx;
-        return JNI_FALSE;
-    }
-
-    // Apply configuration (M120 API - config is applied after creation)
+    // Apply AudioProcessing configuration (M120 API)
     ctx->apm->ApplyConfig(config);
 
     // Store context in Java object
