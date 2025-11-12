@@ -55,7 +55,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/webrtc/src/out/${{ matrix.arch }}
-        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**', 'jni/**') }}-v16-user-configurable-aec-suppression
+        key: webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**', 'jni/**') }}-v17-fix-factory-error
         restore-keys: |
           webrtc-build-${{ env.WEBRTC_BRANCH }}-${{ matrix.arch }}-${{ hashFiles('patches/**') }}-v12-conservative-mode
 
