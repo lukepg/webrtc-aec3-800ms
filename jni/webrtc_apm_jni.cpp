@@ -15,6 +15,8 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/ref_counted_object.h"
 #include "common_audio/resampler/include/resampler.h"
+#include "api/audio/echo_canceller3_config.h"
+#include "api/audio/echo_canceller3_factory.h"
 
 #define LOG_TAG "WebRTC-APM"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -58,6 +60,86 @@ static ApmContext* GetContext(JNIEnv* env, jobject thiz) {
 extern "C" {
 
 // ============================================================================
+// AEC3 Configuration Helper
+// ============================================================================
+
+// Configure EchoCanceller3Config based on suppression level
+// level 0 = Low suppression (better audio quality, some echo may leak)
+// level 1 = Moderate suppression (balanced)
+// level 2 = High suppression (aggressive, current behavior)
+static EchoCanceller3Config CreateAec3Config(int suppressionLevel) {
+    EchoCanceller3Config config;
+
+    // Base configuration for 800ms delay support (from patch)
+    config.filter.refined.length_blocks = 40;
+    config.filter.coarse.length_blocks = 40;
+    config.filter.refined_initial.length_blocks = 40;
+    config.filter.coarse_initial.length_blocks = 40;
+
+    // Configure suppression aggressiveness based on level
+    switch (suppressionLevel) {
+        case 0:  // Low suppression
+            config.filter.refined.leakage_converged = 0.00050f;   // 25x higher than high
+            config.filter.refined.leakage_diverged = 0.10f;       // 5x higher
+            config.filter.coarse.leakage = 0.8f;                  // Higher leakage
+            config.filter.coarse_initial.leakage = 0.85f;
+            config.filter.refined_initial.leakage_converged = 0.010f;
+            config.filter.refined_initial.leakage_diverged = 0.4f;
+            LOGD("AEC3 Config: Low suppression (~20-40%% echo reduction)");
+            break;
+
+        case 1:  // Moderate suppression (recommended default)
+            config.filter.refined.leakage_converged = 0.00010f;   // 5x higher than high
+            config.filter.refined.leakage_diverged = 0.05f;       // 2.5x higher
+            config.filter.coarse.leakage = 0.6f;
+            config.filter.coarse_initial.leakage = 0.75f;
+            config.filter.refined_initial.leakage_converged = 0.005f;
+            config.filter.refined_initial.leakage_diverged = 0.25f;
+            LOGD("AEC3 Config: Moderate suppression (~50-70%% echo reduction)");
+            break;
+
+        case 2:  // High suppression (aggressive, from patch)
+        default:
+            config.filter.refined.leakage_converged = 0.00002f;
+            config.filter.refined.leakage_diverged = 0.02f;
+            config.filter.coarse.leakage = 0.5f;
+            config.filter.coarse_initial.leakage = 0.7f;
+            config.filter.refined_initial.leakage_converged = 0.002f;
+            config.filter.refined_initial.leakage_diverged = 0.2f;
+            LOGD("AEC3 Config: High suppression (~70-95%% echo reduction)");
+            break;
+    }
+
+    // Other config from patch
+    config.delay.default_delay = 0;
+    config.delay.down_sampling_factor = 4;
+    config.delay.num_filters = 5;
+    config.delay.api_call_jitter_blocks = 1;
+    config.delay.min_echo_path_delay_blocks = 0;
+    config.delay.delay_headroom_blocks = 2;
+    config.delay.hysteresis_limit_1_blocks = 1;
+    config.delay.hysteresis_limit_2_blocks = 1;
+
+    config.filter.refined.error_floor = 0.001f;
+    config.filter.refined.noise_gate = 2.0f;
+    config.filter.refined.external_filter_length = 20075344.f;
+    config.filter.coarse.external_filter_length = 20075344.f;
+    config.filter.refined_initial.error_floor = 0.001f;
+    config.filter.refined_initial.noise_gate = 2.0f;
+    config.filter.refined_initial.external_filter_length = 20075344.f;
+    config.filter.coarse_initial.external_filter_length = 20075344.f;
+
+    config.filter.config_change_duration_blocks = 250;
+    config.filter.initial_state_seconds = 4.0f;
+    config.filter.coarse_reset_hangover_blocks = 40;
+    config.filter.conservative_initial_phase = true;
+    config.filter.enable_coarse_filter_output_usage = true;
+    config.filter.use_linear_filter = true;
+
+    return config;
+}
+
+// ============================================================================
 // APM Lifecycle
 // ============================================================================
 
@@ -71,11 +153,12 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
     jboolean beamforming,
     jboolean nextGenerationAec,
     jboolean experimentalNs,
-    jboolean experimentalAgc) {
+    jboolean experimentalAgc,
+    jint aecSuppressionLevel) {
 
     LOGI("Creating APM instance (AEC3 800ms support, M120)");
-    LOGD("  aecExtendFilter=%d, delayAgnostic=%d, nextGenAec=%d",
-         aecExtendFilter, delayAgnostic, nextGenerationAec);
+    LOGD("  aecExtendFilter=%d, delayAgnostic=%d, nextGenAec=%d, aecSuppression=%d",
+         aecExtendFilter, delayAgnostic, nextGenerationAec, aecSuppressionLevel);
 
     // Create context
     ApmContext* ctx = new ApmContext();
@@ -88,7 +171,7 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
         config.echo_canceller.enabled = true;
         config.echo_canceller.mobile_mode = false;  // Use full AEC3, not mobile
 
-        LOGI("AEC3 enabled (delay-agnostic mode, 800ms support)");
+        LOGI("AEC3 enabled (delay-agnostic mode, 800ms support, suppression level=%d)", aecSuppressionLevel);
     } else {
         // Legacy AEC (not recommended for Bluetooth)
         config.echo_canceller.enabled = false;
@@ -112,8 +195,19 @@ Java_com_webrtc_audioprocessing_Apm_nativeCreateApmInstance(
     // High-pass filter (removes low-frequency rumble, improves AEC)
     config.high_pass_filter.enabled = true;
 
-    // Create APM instance (M120 API - Create() takes no arguments)
-    ctx->apm = AudioProcessingBuilder().Create();
+    // Create APM instance with custom AEC3 configuration
+    if (nextGenerationAec) {
+        // Create custom AEC3 config with user's suppression level
+        EchoCanceller3Config aec3_config = CreateAec3Config(aecSuppressionLevel);
+
+        // Build APM with custom AEC3 factory
+        ctx->apm = AudioProcessingBuilder()
+            .SetEchoControlFactory(std::make_unique<EchoCanceller3Factory>(aec3_config))
+            .Create();
+    } else {
+        // Create APM without custom AEC3 config
+        ctx->apm = AudioProcessingBuilder().Create();
+    }
 
     if (!ctx->apm) {
         LOGE("Failed to create APM instance");
