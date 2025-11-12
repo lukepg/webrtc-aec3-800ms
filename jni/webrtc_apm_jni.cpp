@@ -66,68 +66,51 @@ extern "C" {
 // Configure EchoCanceller3Config based on suppression level
 // level 0 = Low suppression (better audio quality, some echo may leak)
 // level 1 = Moderate suppression (balanced)
-// level 2 = High suppression (aggressive, current behavior)
+// level 2 = High suppression (aggressive, current behavior from patch)
 static EchoCanceller3Config CreateAec3Config(int suppressionLevel) {
     EchoCanceller3Config config;
 
-    // Base configuration for 800ms delay support (from patch)
+    // Base configuration for 800ms delay support (filter length from patch)
     config.filter.refined.length_blocks = 40;
     config.filter.coarse.length_blocks = 40;
     config.filter.refined_initial.length_blocks = 40;
     config.filter.coarse_initial.length_blocks = 40;
 
-    // Configure suppression aggressiveness based on level
+    // Configure suppression aggressiveness via leakage parameters
+    // Note: We only modify the refined filter leakage parameters that exist in the API
+    // The coarse filter config uses positional parameters set via the patch
     switch (suppressionLevel) {
         case 0:  // Low suppression
             config.filter.refined.leakage_converged = 0.00050f;   // 25x higher than high
             config.filter.refined.leakage_diverged = 0.10f;       // 5x higher
-            config.filter.coarse.leakage = 0.8f;                  // Higher leakage
-            config.filter.coarse_initial.leakage = 0.85f;
-            config.filter.refined_initial.leakage_converged = 0.010f;
-            config.filter.refined_initial.leakage_diverged = 0.4f;
+            config.filter.refined_initial.leakage_converged = 0.010f;  // 5x higher than high
+            config.filter.refined_initial.leakage_diverged = 0.4f;     // 2x higher
             LOGD("AEC3 Config: Low suppression (~20-40%% echo reduction)");
             break;
 
         case 1:  // Moderate suppression (recommended default)
             config.filter.refined.leakage_converged = 0.00010f;   // 5x higher than high
             config.filter.refined.leakage_diverged = 0.05f;       // 2.5x higher
-            config.filter.coarse.leakage = 0.6f;
-            config.filter.coarse_initial.leakage = 0.75f;
-            config.filter.refined_initial.leakage_converged = 0.005f;
-            config.filter.refined_initial.leakage_diverged = 0.25f;
+            config.filter.refined_initial.leakage_converged = 0.005f;  // 2.5x higher than high
+            config.filter.refined_initial.leakage_diverged = 0.25f;    // 1.25x higher
             LOGD("AEC3 Config: Moderate suppression (~50-70%% echo reduction)");
             break;
 
         case 2:  // High suppression (aggressive, from patch)
         default:
-            config.filter.refined.leakage_converged = 0.00002f;
-            config.filter.refined.leakage_diverged = 0.02f;
-            config.filter.coarse.leakage = 0.5f;
-            config.filter.coarse_initial.leakage = 0.7f;
-            config.filter.refined_initial.leakage_converged = 0.002f;
-            config.filter.refined_initial.leakage_diverged = 0.2f;
+            config.filter.refined.leakage_converged = 0.00002f;   // From patch
+            config.filter.refined.leakage_diverged = 0.02f;       // From patch
+            config.filter.refined_initial.leakage_converged = 0.002f;  // From patch
+            config.filter.refined_initial.leakage_diverged = 0.2f;     // From patch
             LOGD("AEC3 Config: High suppression (~70-95%% echo reduction)");
             break;
     }
 
-    // Other config from patch
-    config.delay.default_delay = 0;
-    config.delay.down_sampling_factor = 4;
-    config.delay.num_filters = 5;
-    config.delay.api_call_jitter_blocks = 1;
-    config.delay.min_echo_path_delay_blocks = 0;
-    config.delay.delay_headroom_blocks = 2;
-    config.delay.hysteresis_limit_1_blocks = 1;
-    config.delay.hysteresis_limit_2_blocks = 1;
-
+    // Other configuration from patch (these values remain constant across all levels)
     config.filter.refined.error_floor = 0.001f;
     config.filter.refined.noise_gate = 2.0f;
-    config.filter.refined.external_filter_length = 20075344.f;
-    config.filter.coarse.external_filter_length = 20075344.f;
     config.filter.refined_initial.error_floor = 0.001f;
     config.filter.refined_initial.noise_gate = 2.0f;
-    config.filter.refined_initial.external_filter_length = 20075344.f;
-    config.filter.coarse_initial.external_filter_length = 20075344.f;
 
     config.filter.config_change_duration_blocks = 250;
     config.filter.initial_state_seconds = 4.0f;
