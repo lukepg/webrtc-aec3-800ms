@@ -139,6 +139,7 @@ jobs:
 
           deps = [
             ":audio_processing",
+            "//api/audio:aec3_factory",
           ]
         }
         BUILDGN
