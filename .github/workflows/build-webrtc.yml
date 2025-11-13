@@ -156,23 +156,28 @@ jobs:
         # ARM LSE atomics require Android 9.0+ but we need to support Android 8.0+ (API 26+)
         # use_custom_libcxx=false uses NDK's libc++ to avoid version mismatch
         # Atomic stubs provide missing ARM LSE symbols
+        # Size optimizations: is_official_build + optimize_for_size + symbol_level=0 + use_thin_lto
         gn gen out/${{ matrix.arch }} --args='
           target_os="android"
           target_cpu="${{ matrix.arch }}"
           android64_ndk_api_level=21
           android32_ndk_api_level=21
           is_debug=false
+          is_official_build=true
+          optimize_for_size=true
+          symbol_level=0
           is_component_build=false
           rtc_include_tests=false
           rtc_enable_protobuf=false
           rtc_build_examples=false
           rtc_build_tools=false
-          use_rtti=true
+          use_rtti=false
+          use_thin_lto=true
           use_custom_libcxx=false
           treat_warnings_as_errors=false
           extra_cflags=["-mno-outline-atomics", "-march=armv8-a"]
           extra_cxxflags=["-mno-outline-atomics", "-march=armv8-a"]
-          extra_ldflags=["-mno-outline-atomics", "-march=armv8-a"]
+          extra_ldflags=["-mno-outline-atomics", "-march=armv8-a", "-Wl,--strip-all"]
         '
 
     - name: Verify patch applied successfully
